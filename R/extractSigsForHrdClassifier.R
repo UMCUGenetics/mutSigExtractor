@@ -5,16 +5,19 @@
 #' @param vcf.sv Path to the vcf file containing SVs (Manta vcf)
 #' @param sample.name The name of the sample as a character. Defaults to 'sample' if none is provided.
 #'
-#' @return A 1-column data frame containing the mutational signature contributions
+#' @return A 1-row data frame containing the mutational signature contributions
 #' @export
 #'
 #' @examples
-#' extractSigsForHrdClassifier(
+#' library(randomForest)
+#' sigs <- extractSigsForHrdClassifier(
 #'    vcf.snv = '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010/analysis/Arne/DR-10_update/scripts/SNV2//XXXXXXXX.vcf.gz',
 #'    vcf.indel = '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010/analysis/Arne/DR-10_update/scripts/INDEL2//XXXXXXXX.vcf.gz',
 #'    vcf.sv = '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-update/data//170217_HMFregXXXXXXXX/XXXXXXXX.vcf.gz',
 #'    sample.name = 'XXXXXXXX'
 #' )
+#' rf_model <- readRDS('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mltoolkit/example/data/rf_hrd_predict.rds')
+#' predict(rf_model, sigs, type = 'prob')
 
 extractSigsForHrdClassifier <- function(vcf.snv, vcf.indel, vcf.sv, sample.name = 'sample'){
 
@@ -55,10 +58,6 @@ extractSigsForHrdClassifier <- function(vcf.snv, vcf.indel, vcf.sv, sample.name 
    colnames(sigs_sv) <- sample.name
 
    return(
-      rbind(sigs_snv, sigs_indel_merged, sigs_sv)
+      t(rbind(sigs_snv, sigs_indel_merged, sigs_sv))
    )
 }
-
-
-
-
