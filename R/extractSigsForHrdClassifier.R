@@ -19,11 +19,11 @@
 #' rf_model <- readRDS('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mltoolkit/example/data/rf_hrd_predict.rds')
 #' predict(rf_model, sigs, type = 'prob')
 
-extractSigsForHrdClassifier <- function(vcf.snv, vcf.indel, vcf.sv, sample.name = 'sample'){
+extractSigsForHrdClassifier <- function(vcf.snv, vcf.indel, vcf.sv, sample.name = 'sample', sv.caller = 'manta'){
 
    sigs_snv <- extractSigsSnv(vcf.snv, vcf.filter = 'PASS')
    sigs_indel <- extractSigsIndel(vcf.indel, vcf.filter = 'PASS')
-   sigs_sv <- extractSigsSv(vcf.sv, vcf.filter = 'PASS')
+   sigs_sv <- extractSigsSv(vcf.sv, vcf.filter = 'PASS', sv.caller = sv.caller)
 
    #--------- SNV / SV signatures post-processing ---------#
    ## Rename snv and sv signatures
