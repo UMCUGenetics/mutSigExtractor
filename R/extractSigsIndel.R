@@ -19,6 +19,7 @@ extractSigsIndel <- function(vcf.file, sample.name = NULL, ref.genome = DEFAULT_
                              indel.len.cap = 5, n.bases.mh.cap = 5, ...){
    ## Read vcf file
    variants <- variantsFromVcf(vcf.file, mode = 'indel', ref.genome, ...)
+   #variants <- variantsFromVcf(vcf.file, mode = 'indel', ref.genome, vcf.filter = 'PASS')
 
    ## Initiate indel sig matrix
    # indel_sigs_grouped <- list(
@@ -86,7 +87,7 @@ extractSigsIndel <- function(vcf.file, sample.name = NULL, ref.genome = DEFAULT_
          mh_l <- nBasesMH(reverse(variants[i,'indel_seq']), reverse(l_flank[i]))
          mh_r <- nBasesMH(variants[i,'indel_seq'], r_flank[i])
 
-         #c(n_bases_mh_l = mh_l, n_bases_mh_r = mh_r)
+         #list(n_bases_mh_l = mh_l, n_bases_mh_r = mh_r)
          max(mh_l,mh_r)
       }))
 
@@ -107,9 +108,9 @@ extractSigsIndel <- function(vcf.file, sample.name = NULL, ref.genome = DEFAULT_
 
          } else {
             context <- 'none'
-
-            return(context)
          }
+
+         return(context)
       }))
 
       ## Gather components for counting final signatures
@@ -120,6 +121,19 @@ extractSigsIndel <- function(vcf.file, sample.name = NULL, ref.genome = DEFAULT_
          n_copies_along_flank,
          n_bases_mh
       )
+
+      # ## for debugging
+      # n_bases_mh <- as.data.frame(n_bases_mh)
+      # sig_components <- cbind(variants,
+      #                         l_flank = l_flank,
+      #                         r_flank = r_flank,
+      #                         n_bases_mh_l = unlist(n_bases_mh$n_bases_mh_l),
+      #                         n_bases_mh_r = unlist(n_bases_mh$n_bases_mh_r),
+      #                         n_copies_along_flank,
+      #                         context
+      #                         )
+      #
+      # write.table(sig_components, '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/call_indel_signatures_v2/XXXXXXXX.txt', sep = '\t')
 
       ## Bin values larger than cap into one bin for indel_len and n_bases_mh
       sig_components$indel_len[sig_components$indel_len >= indel.len.cap] <- indel.len.cap
