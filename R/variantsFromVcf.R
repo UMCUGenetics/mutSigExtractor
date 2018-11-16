@@ -13,33 +13,22 @@
 #'
 #' @return A data frame containing the relevant variant info for extracting the indicated signature type
 #' @export
-variantsFromVcf <- function(vcf.file, mode = NULL, ref.genome = DEFAULT_GENOME, chrom.group = 'all',
-                            vcf.filter = NULL, verbose = F){
-
+variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.genome = DEFAULT_GENOME,
+                            chrom.group = 'all', vcf.filter = NULL, verbose = F){
+   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz'
    vcf <- readVcf(vcf.file)
 
    ## Deal with empty vcfs
-   if(identical(width(vcf),integer(0))){ return(NA) }
+   if(identical(width(vcf),integer(0))){
+      out <- NA
 
-   else {
+   } else {
       if(!is.null(ref.genome)){
          ref_genome <- eval(parse(text = ref.genome))
          ref_organism <- GenomeInfoDb::organism(ref_genome)
          seqlevelsStyle(vcf) <- seqlevelsStyle(ref_genome)
       }
 
-      ## Only keep autosomes?
-      # if(autosomes.only == T){
-      #    if(is.null(ref_genome)){ stop('autosomes.only is TRUE but no reference genome was provided') }
-      #
-      #    auto <- extractSeqlevelsByGroup(
-      #       species = ref_organism,
-      #       style = seqlevelsStyle(ref_genome),
-      #       group = "auto")
-      #    auto_new <- intersect(auto, seqlevels(vcf))
-      #
-      #    vcf <- keepSeqlevels(vcf, auto_new, pruning.mode = "coarse")
-      # }
       if(chrom.group != 'all'){
          if(is.null(ref_genome)){ stop('chromosome.group was specified but no reference genome was provided') }
 
@@ -144,21 +133,6 @@ variantsFromVcf <- function(vcf.file, mode = NULL, ref.genome = DEFAULT_GENOME, 
                   indel_seq <- NA
                }
 
-               # ## Assign variant type
-               # if(ref_lengths[i] == alt_lengths[i]){ variant_type <- 'snv' }
-               # else if(ref_lengths[i] > alt_lengths[i]){ variant_type <- 'del' }
-               # else if(ref_lengths[i] < alt_lengths[i]){ variant_type <- 'ins' }
-               #
-               # ## Get indel seq
-               # indel_start_pos <- 2
-               # if(variant_type == 'del'){
-               #    indel_seq <- substring(ref[i],indel_start_pos, indel_start_pos+indel_lengths[i]-1)
-               # } else if(variant_type == 'ins'){
-               #    indel_seq <- substring(alt[i],indel_start_pos, indel_start_pos+indel_lengths[i]-1)
-               # } else {
-               #    indel_seq <- NA
-               # }
-
                return( list(variant_type = variant_type, indel_seq = indel_seq) )
             })
 
@@ -182,21 +156,82 @@ variantsFromVcf <- function(vcf.file, mode = NULL, ref.genome = DEFAULT_GENOME, 
       }
 
       #========= SV =========#
-      else if (mode == 'sv'){ ## Parser for manta output
+      else if (mode == 'sv'){
 
-         sv_len <- unlist(lapply(info(vcf)$SVLEN, function(i){
-            if(length(i) == 0){ i <- NA }
-            else { i }
-         }))
-         sv_len <- abs(sv_len) ## Convert negative sv_len from DEL to positive
+         if(sv.caller == 'manta'){
+            sv_len <- unlist(lapply(info(vcf)$SVLEN, function(i){
+               if(length(i) == 0){ i <- NA }
+               else { i }
+            }))
+            sv_len <- abs(sv_len) ## Convert negative sv_len from DEL to positive
 
-         out <- data.frame(
-            sv_type = info(vcf)$SVTYPE,
-            sv_len = sv_len
-         )
+            out <- data.frame(
+               sv_type = info(vcf)$SVTYPE,
+               sv_len = sv_len
+            )
+
+         } else if(sv.caller == 'gridss'){
+            ## Retrieve sense partners and unpartnered variants
+            vcf_no_partners <- vcf[grepl('o', names(vcf)) | grepl('b', names(vcf))]
+
+            vcf_as_df <- data.frame(
+               id = names(vcf_no_partners),
+               partner_type = unlist(str_extract_all(names(vcf_no_partners), '[ob]$')),
+               chrom_ref = str_remove_all(as.character(seqnames(vcf_no_partners)), 'chr'),
+               pos_ref = start(vcf_no_partners),
+               seq_ref = as.character(rowRanges(vcf_no_partners)$REF),
+               alt = as.character(rowRanges(vcf_no_partners)$ALT)
+            )
+
+            alt_split <- str_extract_all(vcf_as_df$alt, '[\\d\\w]+:\\d+')
+            alt_coord <- lapply(alt_split, function(i){
+               #i=alt_split[[1]]
+               if(length(i) == 0){
+                  c(NA,NA)
+               } else {
+                  unlist(str_split(i, ':'))
+               }
+            })
+            alt_coord <- as.data.frame(do.call(rbind,alt_coord))
+            colnames(alt_coord) <- c('chrom_alt','pos_alt')
+
+
+            vcf_as_df <- cbind(vcf_as_df, alt_coord)
+            vcf_as_df$pos_alt <- as.numeric(as.character(vcf_as_df$pos_alt))
+
+            vcf_as_df$sv_len_pre <- vcf_as_df$pos_alt - vcf_as_df$pos_ref
+
+            out <- do.call(rbind,lapply(1:nrow(vcf_as_df), function(i){
+               row <- vcf_as_df[i,]
+
+               if(row$partner_type == 'b'){
+                  sv_type <- 'SGL'
+               } else if(row$chrom_ref != row$chrom_alt){
+                  sv_type <- 'TRA'
+               } else if(row$sv_len_pre == 1){
+                  sv_type <- 'INS'
+               } else if(grepl('\\w+\\[.+\\[', row$alt)){
+                  sv_type <- 'DEL'
+               } else if(grepl('\\].+\\]\\w+', row$alt)){
+                  sv_type <- 'DUP'
+               } else if(grepl('\\w+\\].+\\]', row$alt) | grepl('\\[.+\\[\\w+', row$alt) ){
+                  sv_type <- 'INV'
+               } else {
+                  sv_type <- NA
+               }
+
+               if(sv_type %in% c('SGL','TRA')){ sv_len <- NA }
+               else{ sv_len <- row$sv_len_pre }
+
+               return(data.frame(sv_type, sv_len, stringsAsFactors = F))
+            }))
+
+         } else {
+            stop('Please specify SV caller')
+         }
 
       }
-
-      return(out)
    }
+
+   return(out)
 }
