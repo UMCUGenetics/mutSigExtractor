@@ -6,8 +6,6 @@
 #' @param sample.name If a character is provided, the header for the output matrix will be named to this. If none is
 #' provided, the basename of the vcf file will be used.
 #' @param sv.len.cutoffs SV length cutoff intervals as a numeric vector.
-#' @param tra.reported.twice Some variant callers reported translocations twice (once for the origin, and once for the destination). If TRUE, the
-#' number of counted translocations will be divided by 2.
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are the mutation
 #' contexts and the columns are  the mutational signatures.
 #'
@@ -15,10 +13,11 @@
 #' each mutational signature) , or (if output = 'contexts') the mutation contexts.
 #' @export
 
-extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, sv.len.cutoffs = c(10^3, 10^4, 10^5, 10^6, 10^7, Inf),
-                          tra.reported.twice = T, signature.profiles = SV_SIGNATURE_PROFILES, ...){
+extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, sv.caller = 'manta',
+                          sv.len.cutoffs = c(10^3, 10^4, 10^5, 10^6, 10^7, Inf),
+                          signature.profiles = SV_SIGNATURE_PROFILES, ...){
 
-   variants <- variantsFromVcf(vcf.file, mode = 'sv', ...)
+   variants <- variantsFromVcf(vcf.file, mode = 'sv', sv.caller = sv.caller, ...)
 
    ## Initialize table of SV type/length bins
    sv_types <- c('DEL','DUP','INV') ## INS ignored. TRA/BND dealt with in a later step
@@ -53,7 +52,7 @@ extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, s
       ## Count context occurrences for translocations
       translocation_counts <- nrow(variants[variants$sv_type == 'BND' | variants$sv_type == 'TRA',])
 
-      if(tra.reported.twice){
+      if(sv.caller == 'manta'){ ## manta reports translocations twice (origin/destination)
          translocation_counts <- translocation_counts/2
       }
 
@@ -62,12 +61,12 @@ extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, s
 
    ## Create context names
    names(context_counts) <- c(
-      paste(
-         sv_contexts$sv_type,
-         formatC(sv_contexts$lower_cutoff, format = 'e', digits = 0),
-         formatC(sv_contexts$upper_cutoff, format = 'e', digits = 0),
-         'bp', sep = '_'
-      ),
+      str_replace_all(paste(
+            sv_contexts$sv_type,
+            formatC(sv_contexts$lower_cutoff, format = 'e', digits = 0),
+            formatC(sv_contexts$upper_cutoff, format = 'e', digits = 0),
+            'bp', sep = '_'
+         ),'[+]',''),
 
       'TRA'
    )
@@ -93,3 +92,23 @@ extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, s
 
    return(out)
 }
+
+# #========= Testing =========#
+# XXXXXXXX <- list(
+#    gridss = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz',
+#                           sv.caller = 'gridss', output = 'contexts'),
+#    bpi = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-update/data/170812_HMFregXXXXXXXX/XXXXXXXX.vcf.gz',
+#                        sv.caller = 'manta', output = 'contexts')
+# )
+#
+# XXXXXXXX <- list(
+#    gridss = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz',
+#                           sv.caller = 'gridss', output = 'signatures'),
+#    bpi = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-update/data/170812_HMFregXXXXXXXX/XXXXXXXX.vcf.gz',
+#                        sv.caller = 'manta', output = 'signatures')
+# )
+#
+# do.call(cbind, XXXXXXXX)
+# do.call(cbind, XXXXXXXX)
+#
+# extractSigsIndel('/Users/lnguyen//hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-update/data/170812_HMFregXXXXXXXX/XXXXXXXX.vcf.gz')
