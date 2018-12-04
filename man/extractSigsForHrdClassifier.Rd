@@ -5,7 +5,7 @@
 \title{Extract signatures in the format compatible with the random forest HRD classifier}
 \usage{
 extractSigsForHrdClassifier(vcf.snv, vcf.indel, vcf.sv,
-  sample.name = "sample")
+  sample.name = "sample", sv.caller = "manta")
 }
 \arguments{
 \item{vcf.snv}{Path to the vcf file containing SNVs}

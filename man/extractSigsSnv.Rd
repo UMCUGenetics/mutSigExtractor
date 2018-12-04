@@ -5,8 +5,8 @@
 \title{Extract single nucleotide variant signatures}
 \usage{
 extractSigsSnv(vcf.file, output = "signatures", sample.name = NULL,
-  ref.genome = DEFAULT_GENOME, signature.profiles = SNV_SIGNATURE_PROFILES,
-  ...)
+  ref.genome = DEFAULT_GENOME,
+  signature.profiles = SNV_SIGNATURE_PROFILES, ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}

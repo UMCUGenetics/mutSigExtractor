@@ -4,8 +4,9 @@
 \alias{extractSigsIndel}
 \title{Extract indel signatures}
 \usage{
-extractSigsIndel(vcf.file, sample.name = NULL, ref.genome = DEFAULT_GENOME,
-  indel.len.cap = 5, n.bases.mh.cap = 5, ...)
+extractSigsIndel(vcf.file, sample.name = NULL,
+  ref.genome = DEFAULT_GENOME, indel.len.cap = 5, n.bases.mh.cap = 5,
+  ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}

@@ -5,8 +5,8 @@
 \title{Extract structural variant signatures}
 \usage{
 extractSigsSv(vcf.file, output = "signatures", sample.name = NULL,
-  sv.len.cutoffs = c(10^3, 10^4, 10^5, 10^6, 10^7, Inf),
-  tra.reported.twice = T, signature.profiles = SV_SIGNATURE_PROFILES, ...)
+  sv.caller = "manta", sv.len.cutoffs = c(10^3, 10^4, 10^5, 10^6, 10^7,
+  Inf), signature.profiles = SV_SIGNATURE_PROFILES, ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
@@ -18,9 +18,6 @@ extractSigsSv(vcf.file, output = "signatures", sample.name = NULL,
 provided, the basename of the vcf file will be used.}
 
 \item{sv.len.cutoffs}{SV length cutoff intervals as a numeric vector.}
-
-\item{tra.reported.twice}{Some variant callers reported translocations twice (once for the origin, and once for the destination). If TRUE, the
-number of counted translocations will be divided by 2.}
 
 \item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are the mutation
 contexts and the columns are  the mutational signatures.}
