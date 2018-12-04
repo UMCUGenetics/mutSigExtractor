@@ -4,7 +4,7 @@ An R packge for extracting SNV (COSMIC) signatures, indel signatures and SV sign
 
 The core functions for extracting signatures are:
 ```
-## By default, returns the contributions for the 30 COSMIC signatures
+## By default, returns the absolute contributions for the 30 COSMIC signatures
 extractSigsSnv()
 
 ## Returns the counts of indels within repeat regions, indels with  flanking microhomology, and 
