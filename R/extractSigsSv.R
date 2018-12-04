@@ -17,7 +17,11 @@ extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, s
                           sv.len.cutoffs = c(10^3, 10^4, 10^5, 10^6, 10^7, Inf),
                           signature.profiles = SV_SIGNATURE_PROFILES, ...){
 
+   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz'
+   #vcf.file=gridss_vcf_files[3]
    variants <- variantsFromVcf(vcf.file, mode = 'sv', sv.caller = sv.caller, ...)
+   #variants <- variantsFromVcf(vcf.file, mode = 'sv', sv.caller = 'gridss')
+
 
    ## Initialize table of SV type/length bins
    sv_types <- c('DEL','DUP','INV') ## INS ignored. TRA/BND dealt with in a later step
@@ -92,23 +96,3 @@ extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, s
 
    return(out)
 }
-
-# #========= Testing =========#
-# XXXXXXXX <- list(
-#    gridss = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz',
-#                           sv.caller = 'gridss', output = 'contexts'),
-#    bpi = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-update/data/170812_HMFregXXXXXXXX/XXXXXXXX.vcf.gz',
-#                        sv.caller = 'manta', output = 'contexts')
-# )
-#
-# XXXXXXXX <- list(
-#    gridss = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz',
-#                           sv.caller = 'gridss', output = 'signatures'),
-#    bpi = extractSigsSv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-update/data/170812_HMFregXXXXXXXX/XXXXXXXX.vcf.gz',
-#                        sv.caller = 'manta', output = 'signatures')
-# )
-#
-# do.call(cbind, XXXXXXXX)
-# do.call(cbind, XXXXXXXX)
-#
-# extractSigsIndel('/Users/lnguyen//hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-update/data/170812_HMFregXXXXXXXX/XXXXXXXX.vcf.gz')
