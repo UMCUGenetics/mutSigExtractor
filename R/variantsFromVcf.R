@@ -180,7 +180,8 @@ variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.geno
                chrom_ref = str_remove_all(as.character(seqnames(vcf_no_partners)), 'chr'),
                pos_ref = start(vcf_no_partners),
                seq_ref = as.character(rowRanges(vcf_no_partners)$REF),
-               alt = as.character(rowRanges(vcf_no_partners)$ALT)
+               alt = as.character(rowRanges(vcf_no_partners)$ALT),
+               stringsAsFactors = F
             )
 
             alt_split <- str_extract_all(vcf_as_df$alt, '[\\d\\w]+:\\d+')
