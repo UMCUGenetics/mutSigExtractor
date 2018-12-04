@@ -1,17 +1,24 @@
 #' Extract single nucleotide variant signatures
 #'
-#' @param vcf.file Path to the vcf file
-#' @param output Output the absolute signature contributions (default, 'signatures'), or the 96-trinucleotide contexts
-#' ('contexts')
-#' @param sample.name If a character is provided, the header for the output matrix will be named to this. If none is
-#' provided, the basename of the vcf file will be used.
-#' @param ref.genome A character naming the BSgenome reference genome. Default is "BSgenome.Hsapiens.UCSC.hg19". If another
-#' reference genome is indicated, it will also need to be installed.
-#' @param signature.profiles A matrix containing the mutational signature profiles, where rows are the mutation
-#' contexts and the columns are  the mutational signatures.
+#' @description Will output a 1-column matrix containing: (if output = 'signatures') the absolute
+#' signature contributions (i.e. the number of mutations contributing to each mutational signature),
+#' or (if output = 'contexts') the mutation contexts.
 #'
-#' @return A 1-column matrix containing: (if output = 'signatures') the absolute signature contributions (i.e. the number of mutations contributing to
-#' each mutational signature) , or (if output = 'contexts') the mutation contexts.
+#' To elaborate the signatures used are the 30 COSMIC signatures (https://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt),
+#' which are derived from the 96-trinucleotide mutation contexts.
+#'
+#' @param vcf.file Path to the vcf file
+#' @param output Output the absolute signature contributions (default, 'signatures'), or the
+#' 96-trinucleotide contexts ('contexts')
+#' @param sample.name If a character is provided, the header for the output matrix will be named to
+#' this. If none is provided, the basename of the vcf file will be used.
+#' @param ref.genome A character naming the BSgenome reference genome. Default is
+#' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
+#' installed.
+#' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
+#' the mutation contexts and the columns are  the mutational signatures.
+#'
+#' @return A 1-column matrix
 #' @export
 extractSigsSnv <- function(vcf.file, output = 'signatures', sample.name = NULL,
                            ref.genome = DEFAULT_GENOME, signature.profiles = SNV_SIGNATURE_PROFILES, ...){

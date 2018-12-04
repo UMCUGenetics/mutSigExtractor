@@ -24,10 +24,16 @@ Counts of longer indels will simply be binned to the counts of contexts at the m
 contexts. Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.}
 
 \item{...}{Other arguments that can be passed to variantsFromVcf()}
+
+\item{description}{Will return a 1-column matrix containing the absolute indel signature
+contributions (i.e. the number of mutations contributing to each mutational signature). The
+signatures used are insertions/deletions within repeat regions (ins.rep, del.rep),
+insertions/deletions with flanking microhomology (ins.mh, del.mh), and insertions/deletions
+which don't fall under the previous 2 categories (ins.none, del.none). Each category is further
+stratified by the length of the indel.}
 }
 \value{
-A 1-column matrix containing the absolute indel signature contributions (i.e. the number of mutations contributing
-to each mutational signature)
+A 1-column matrix
 }
 \description{
 Extract indel signatures

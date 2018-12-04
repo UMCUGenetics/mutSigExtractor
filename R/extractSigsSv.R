@@ -1,16 +1,27 @@
 #' Extract structural variant signatures
 #'
-#' @param vcf.file Path to the vcf file
-#' @param output Output the absolute signature contributions (default, 'signatures'), or the SV type/length contexts
-#' ('contexts')
-#' @param sample.name If a character is provided, the header for the output matrix will be named to this. If none is
-#' provided, the basename of the vcf file will be used.
-#' @param sv.len.cutoffs SV length cutoff intervals as a numeric vector.
-#' @param signature.profiles A matrix containing the mutational signature profiles, where rows are the mutation
-#' contexts and the columns are  the mutational signatures.
+#' @description Will return a 1-column matrix containing: (if output = 'signatures') the absolute
+#' signature contributions (i.e. the number of mutations contributing to each mutational signature),
+#' or (if output = 'contexts') the mutation contexts.
 #'
-#' @return A 1-column matrix containing: (if output = 'signatures') the absolute signature contributions (i.e. the number of mutations contributing to
-#' each mutational signature) , or (if output = 'contexts') the mutation contexts.
+#' To elaborate, the 6 SV signatures used are those described in this paper: https://media.nature.com/original/nature-assets/nature/journal/v534/n7605/extref/nature17676-s3.zip,
+#' in Supplementary.Table.21.Signatures.v3.xlsx. These are derived from mutation contexts composed
+#' of SV type/length.
+#'
+#' Note that the probabilities of the clustered and non-clustered rearrangements in the signature
+#' profile have been combined. In other words, whether the rearrangements were
+#' clustered/non-clustered were not considered.
+#'
+#' @param vcf.file Path to the vcf file
+#' @param output Output the absolute signature contributions (default, 'signatures'), or the SV
+#' type/length contexts ('contexts')
+#' @param sample.name If a character is provided, the header for the output matrix will be named to
+#' this. If none is provided, the basename of the vcf file will be used.
+#' @param sv.len.cutoffs SV length cutoff intervals as a numeric vector.
+#' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
+#' the mutation contexts and the columns are  the mutational signatures.
+#'
+#' @return A 1-column matrix
 #' @export
 
 extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, sv.caller = 'manta',
