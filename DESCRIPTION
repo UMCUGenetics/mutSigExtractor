@@ -17,5 +17,3 @@ Depends:
 	stringr,
 	BSgenome,
 	BSgenome.Hsapiens.UCSC.hg19
-Suggests:
-	randomForest
