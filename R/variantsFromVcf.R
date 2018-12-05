@@ -15,7 +15,8 @@
 #' @export
 variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.genome = DEFAULT_GENOME,
                             chrom.group = 'all', vcf.filter = NULL, verbose = F){
-   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz'
+   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/mutSigExtractor/R_source/call_indel_signatures_v2/XXXXXXXX.vcf.gz'
+   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz'
    vcf <- readVcf(vcf.file)
 
    ## Deal with empty vcfs
@@ -49,7 +50,6 @@ variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.geno
 
       #========= SNV/Indels =========#
       if(mode == 'snv' || mode == 'indel'){
-
          vcf <- rowRanges(vcf)
 
          ## Unselect rows with multiple ALT sequences
@@ -63,30 +63,18 @@ variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.geno
          pos <- start(vcf)
 
          ref <- as.character(vcf$REF)
-         if (length(ref) == 0){ ref <- as.character(vcf$ref) } ## Allow both uppercase and lowercase column names when retrieving ref/alt
-
          alt <- as.character(unlist(vcf$ALT))
-         if (length(alt) == 0){ alt <- vcf$alt }
 
          ## Unspecified mode
          if(is.null(mode)){
             if(verbose){ message('No mode specified. Outputting chrom, pos, ref, alt columns.') }
-            out <- data.frame(
-               chrom = chrom,
-               pos = pos,
-               ref = ref,
-               alt = alt,
-               #filter = vcf$FILTER,
-               stringsAsFactors = F
-            )
+            out <- data.frame(chrom,pos,ref,alt,stringsAsFactors = F)
          }
 
          #--------- SNV ---------#
          else if(mode == 'snv'){
-
             out <- data.frame(
                substitution = paste0(ref,'>',alt),
-
                tri_context = getSeq(
                   x = eval(parse(text=ref.genome)),
                   names = seqnames(vcf),
@@ -94,62 +82,49 @@ variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.geno
                   end = end(vcf) + 1,
                   as.character = T
                ),
-
                stringsAsFactors = F
             )
-
             out <- out[nchar(ref) == 1 & nchar(alt) == 1,]
          }
 
          #--------- Indel ---------#
          else if(mode == 'indel'){
-
-            ## Assign preliminary variant types and remove SNVs and MNVs
-            ref_lengths <- nchar(ref)
-            alt_lengths <- nchar(alt)
-            indel_lengths <- abs(alt_lengths - ref_lengths)
-
-            indel_type_sequence <- lapply(1:length(ref), function(i){
+            indel_type_sequence <-  Map(function(ref, alt, ref_lengths, alt_lengths, indel_lengths){
                ## Assign variant type
-               if(ref_lengths[i] == 1 & alt_lengths[i] == 1){
+               if(ref_lengths == 1 & alt_lengths == 1){
                   variant_type <- 'snv'
-               } else if(ref_lengths[i] >= 2 & alt_lengths[i] >= 2){
-                  if(ref_lengths[i] == alt_lengths[i]){ variant_type <- 'mnv_neutral' }
-                  else if(ref_lengths[i] > alt_lengths[i]){ variant_type <- 'mnv_del' }
-                  else if(ref_lengths[i] < alt_lengths[i]){ variant_type <- 'mnv_ins' }
-               } else if(ref_lengths[i] > alt_lengths[i]){
+               } else if(ref_lengths >= 2 & alt_lengths >= 2){
+                  if(ref_lengths == alt_lengths){ variant_type <- 'mnv_neutral' }
+                  else if(ref_lengths > alt_lengths){ variant_type <- 'mnv_del' }
+                  else if(ref_lengths < alt_lengths){ variant_type <- 'mnv_ins' }
+               } else if(ref_lengths > alt_lengths){
                   variant_type <- 'del'
-               } else if(ref_lengths[i] < alt_lengths[i]){
+               } else if(ref_lengths < alt_lengths){
                   variant_type <- 'ins'
                }
 
                ## Get indel seq
                indel_start_pos <- 2
                if(variant_type == 'del' ||  variant_type == 'mnv_del'){ ## dels/mnv
-                  indel_seq <- substring(ref[i],indel_start_pos, indel_start_pos+indel_lengths[i]-1)
+                  indel_seq <- substring(ref,indel_start_pos, indel_start_pos+indel_lengths-1)
                } else if(variant_type == 'ins' ||  variant_type == 'mnv_ins'){ ## ins/mnv
-                  indel_seq <- substring(alt[i],indel_start_pos, indel_start_pos+indel_lengths[i]-1)
+                  indel_seq <- substring(alt,indel_start_pos, indel_start_pos+indel_lengths-1)
                } else {
                   indel_seq <- NA
                }
 
-               return( list(variant_type = variant_type, indel_seq = indel_seq) )
-            })
-
-            variant_type <- unlist(lapply(indel_type_sequence, function(i){ i$variant_type }))
-            indel_seq <- unlist(lapply(indel_type_sequence, function(i){ i$indel_seq }))
-
-            out <- data.frame(
-               chrom = chrom,
-               pos = pos,
-               ref = ref,
-               alt = alt,
-               indel_len = indel_lengths,
-               indel_type = variant_type,
-               indel_seq = indel_seq,
-               stringsAsFactors = F
+               ## Return a vector instead of a list to prevent dataframe having lists as columns
+               ## indel_lengths will be a character, but is converted into an integer below
+               return( c(indel_lengths, variant_type, indel_seq) )
+            },
+               ref, alt, ref_lengths = nchar(ref), alt_lengths = nchar(alt),
+               indel_lengths = abs(nchar(alt)-nchar(ref)), USE.NAMES = F
             )
+            indel_type_sequence <- as.data.frame(do.call(rbind, indel_type_sequence))
+            colnames(indel_type_sequence) <- c('indel_len','indel_type','indel_seq')
+            indel_type_sequence$indel_len <- as.character(as.integer(indel_type_sequence$indel_len))
 
+            out <- cbind(chrom, pos, ref, alt, indel_type_sequence, stringsAsFactors = F)
             #out <- out[!(out$indel_type %in% c('snv','mnv_neutral')),]
             out <- out[out$indel_type %in% c('del','ins'),]
          }
@@ -174,7 +149,7 @@ variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.geno
             ## Retrieve sense partners and unpartnered variants
             vcf_no_partners <- vcf[grepl('o', names(vcf)) | grepl('b', names(vcf))]
 
-            vcf_as_df <- data.frame(
+            df <- data.frame(
                id = names(vcf_no_partners),
                partner_type = unlist(str_extract_all(names(vcf_no_partners), '[ob]$')),
                chrom_ref = str_remove_all(as.character(seqnames(vcf_no_partners)), 'chr'),
@@ -184,48 +159,44 @@ variantsFromVcf <- function(vcf.file, mode = NULL, sv.caller = 'manta', ref.geno
                stringsAsFactors = F
             )
 
-            alt_split <- str_extract_all(vcf_as_df$alt, '[\\d\\w]+:\\d+')
+            ## Preprocessing before decision tree
+            alt_split <- str_extract_all(df$alt, '[\\d\\w]+:\\d+')
             alt_coord <- lapply(alt_split, function(i){
                #i=alt_split[[1]]
-               if(length(i) == 0){
-                  c(NA,NA)
-               } else {
-                  unlist(str_split(i, ':'))
-               }
+               if(length(i) == 0){ c(NA,NA) }
+               else { unlist(str_split(i, ':')) }
             })
             alt_coord <- as.data.frame(do.call(rbind,alt_coord))
             colnames(alt_coord) <- c('chrom_alt','pos_alt')
 
+            df <- cbind(df, alt_coord)
+            df$pos_alt <- as.numeric(as.character(df$pos_alt))
 
-            vcf_as_df <- cbind(vcf_as_df, alt_coord)
-            vcf_as_df$pos_alt <- as.numeric(as.character(vcf_as_df$pos_alt))
+            df$sv_len_pre <- df$pos_alt - df$pos_ref
 
-            vcf_as_df$sv_len_pre <- vcf_as_df$pos_alt - vcf_as_df$pos_ref
-
-            out <- do.call(rbind,lapply(1:nrow(vcf_as_df), function(i){
-               row <- vcf_as_df[i,]
-
-               if(row$partner_type == 'b'){
+            ## Decision tree
+            out <- do.call(rbind,Map(function(partner_type, chrom_ref, chrom_alt, alt, sv_len_pre){
+               if(partner_type == 'b'){
                   sv_type <- 'SGL'
-               } else if(row$chrom_ref != row$chrom_alt){
+               } else if(chrom_ref != chrom_alt){
                   sv_type <- 'TRA'
-               } else if(row$sv_len_pre == 1){
+               } else if(sv_len_pre == 1){
                   sv_type <- 'INS'
-               } else if(grepl('\\w+\\[.+\\[', row$alt)){
+               } else if(grepl('\\w+\\[.+\\[', alt)){
                   sv_type <- 'DEL'
-               } else if(grepl('\\].+\\]\\w+', row$alt)){
+               } else if(grepl('\\].+\\]\\w+', alt)){
                   sv_type <- 'DUP'
-               } else if(grepl('\\w+\\].+\\]', row$alt) | grepl('\\[.+\\[\\w+', row$alt) ){
+               } else if(grepl('\\w+\\].+\\]', alt) | grepl('\\[.+\\[\\w+', alt) ){
                   sv_type <- 'INV'
                } else {
                   sv_type <- NA
                }
 
                if(sv_type %in% c('SGL','TRA')){ sv_len <- NA }
-               else{ sv_len <- row$sv_len_pre }
+               else{ sv_len <- sv_len_pre }
 
                return(data.frame(sv_type, sv_len, stringsAsFactors = F))
-            }))
+            }, df$partner_type, df$chrom_ref, df$chrom_alt, df$alt, df$sv_len_pre, USE.NAMES = F))
 
          } else {
             stop('Please specify SV caller')

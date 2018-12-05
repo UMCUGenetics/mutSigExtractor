@@ -23,7 +23,10 @@
 extractSigsSnv <- function(vcf.file, output = 'signatures', sample.name = NULL,
                            ref.genome = DEFAULT_GENOME, signature.profiles = SNV_SIGNATURE_PROFILES, ...){
 
+   #vcf.file = '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/mutSigExtractor/R_source/call_snv_signatures/EGAZ00001222791_EGAZ00001222814_post_processed.vcf.gz'
+   #output = 'contexts'
    variants <- variantsFromVcf(vcf.file, mode = 'snv', ref.genome, ...)
+   #variants <- variantsFromVcf(vcf.file, mode = 'snv', ref.genome)
 
    ## Deal with empty vcfs
    if(!is.data.frame(variants) && is.na(variants)){
@@ -53,11 +56,12 @@ extractSigsSnv <- function(vcf.file, output = 'signatures', sample.name = NULL,
       ## Count context occurrences. Fill unfound contexts with 0
       subs_context_counts <- table(variants$subs_context)
 
-      subs_context_counts <- unlist(lapply(SUBS_CONTEXTS_96, function(i){
+      subs_context_counts <- vapply(SUBS_CONTEXTS_96, function(i){
          counts <- subs_context_counts[i]
          if(is.na(counts)){ counts <- 0 }
          return(counts)
-      }))
+      }, integer(1))
+
       names(subs_context_counts) <- SUBS_CONTEXTS_96
    }
 
