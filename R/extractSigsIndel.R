@@ -25,8 +25,6 @@ extractSigsIndel <- function(vcf.file, sample.name = NULL, ref.genome = DEFAULT_
                              indel.len.cap = 5, n.bases.mh.cap = 5, ...){
    ## Read vcf file
    variants <- variantsFromVcf(vcf.file, mode = 'indel', ref.genome, ...)
-   #vcf.file = '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/mutSigExtractor/R_source/call_snv_signatures/EGAZ00001222791_EGAZ00001222814_post_processed.vcf.gz'
-   #variants <- variantsFromVcf(vcf.file, mode = 'indel', ref.genome, vcf.filter = 'PASS')
 
    indel_sigs <- c(
       paste0('del.rep.len.', 1:indel.len.cap),
