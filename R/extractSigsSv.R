@@ -28,10 +28,9 @@ extractSigsSv <- function(vcf.file, output = 'signatures', sample.name = NULL, s
                           sv.len.cutoffs = c(10^3, 10^4, 10^5, 10^6, 10^7, Inf),
                           signature.profiles = SV_SIGNATURE_PROFILES, ...){
 
-   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_PCAGW/scripts/mutSigExtractor/R_source/gridss_output/XXXXXXXX.purple.sv.vcf.gz'
    #vcf.file=gridss_vcf_files[3]
    variants <- variantsFromVcf(vcf.file, mode = 'sv', sv.caller = sv.caller, ...)
-   #variants <- variantsFromVcf(vcf.file, mode = 'sv', sv.caller = 'gridss')
+   #variants <- variantsFromVcf(vcf.file, mode = 'sv', sv.caller = 'gridss', vcf.filter='PASS')
 
 
    ## Initialize table of SV type/length bins
