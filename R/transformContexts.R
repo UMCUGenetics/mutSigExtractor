@@ -22,8 +22,8 @@
 #' )
 #' transformContexts(contexts, simplify.types = c('snv','indel','sv'), rel.types = c('snv','indel','sv'))
 
-transformContexts <- function(contexts = NULL, snv = NULL, indel = NULL, sv = NULL,
-                              simplify.types = NULL, rel.types = NULL){
+transformContexts <- function(contexts=NULL, snv=NULL, indel=NULL, sv=NULL,
+                              simplify.types=NULL, lsqnonneg.types=NULL, rel.types=NULL){
 
    if(!is.null(contexts)){
       snv <- if(!is.null(contexts$snv)){ contexts$snv }
@@ -39,6 +39,14 @@ transformContexts <- function(contexts = NULL, snv = NULL, indel = NULL, sv = NU
          snv <- do.call(cbind, lapply(snv_split, rowSums))
          colnames(snv) <- str_replace_all(SUBSTITUTIONS,'>','.')
       }
+
+      if('snv' %in% lsqnonneg.types){
+         snv <- t(apply(contexts$snv, 1, function(i){
+            fitToSignatures(SNV_SIGNATURE_PROFILES, i)$x
+         }))
+         colnames(snv) <- paste0('e.',1:30)
+      }
+
       if('snv' %in% rel.types){
          snv <- snv/rowSums(snv)
       }
@@ -53,6 +61,11 @@ transformContexts <- function(contexts = NULL, snv = NULL, indel = NULL, sv = NU
          indel <- do.call(cbind, lapply(indel_split, rowSums))
          colnames(indel) <- indel_types
       }
+
+      if('indel' %in% lsqnonneg.types){
+         stop('Indel least-squares fit signatures have not been implemented in this version')
+      }
+
       if('indel' %in% rel.types){
          indel <- indel/rowSums(indel)
       }
@@ -67,6 +80,14 @@ transformContexts <- function(contexts = NULL, snv = NULL, indel = NULL, sv = NU
          sv <- do.call(cbind, lapply(sv_split, rowSums))
          colnames(sv) <- paste0('SV.',sv_types)
       }
+
+      if('sv' %in% lsqnonneg.types){
+         sv <- t(apply(contexts$sv, 1, function(i){
+            fitToSignatures(SV_SIGNATURE_PROFILES, i)$x
+         }))
+         colnames(sv) <- paste0('SV',1:6)
+      }
+
       if('sv' %in% rel.types){
          sv <- sv/rowSums(sv)
       }
