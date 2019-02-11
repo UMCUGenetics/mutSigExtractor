@@ -28,11 +28,8 @@ eps <- function(x = 1.0) {
 ## Main function
 fitToSignatures <- function(signature.profiles, mut.context.counts){
 
-   if (!is.matrix(signature.profiles))
-      stop("'signature.profiles' must be a matrix")
-
-   if(!is.vector(mut.context.counts))
-      stop("'mut.context.counts' must be a vector")
+   if(!is.matrix(signature.profiles)){ stop("'signature.profiles' must be a matrix") }
+   if(!is.vector(mut.context.counts)){ stop("'mut.context.counts' must be a vector") }
 
    m <- nrow(signature.profiles); n <- ncol(signature.profiles)
    if (m != length(mut.context.counts))
