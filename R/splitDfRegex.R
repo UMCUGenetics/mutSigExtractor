@@ -15,7 +15,7 @@
 #' ## The same output list as above, but without names
 #' splitDfRegex(df = contexts, patterns = list('\\[', '[.]', '[A-Z]{3}'))
 
-splitDfRegex <- function(df, patterns, return.remainder = T){
+splitDfRegex <- function(df, patterns, return.remainder=T, names=NULL){
    patterns <- as.list(patterns)
 
    df <- as.data.frame(df)
@@ -30,6 +30,10 @@ splitDfRegex <- function(df, patterns, return.remainder = T){
       if(length(remainder_indexes) != 0){
          l_split[['remainder']] <- df[remainder_indexes]
       }
+   }
+
+   if(!is.null(names)){
+      names(l_split) <- names
    }
 
    return(l_split)
