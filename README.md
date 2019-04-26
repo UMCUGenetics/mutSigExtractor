@@ -14,7 +14,7 @@ The contribution of each of the [30 COSMIC SNV signatures](https://cancer.sanger
 
 Similarly, the contribution of the SV signatures as described by [Nik-Zainal et al. 2016](https://www.nature.com/articles/nature17676) are calculated using the [SV signature profile matrix](https://media.nature.com/original/nature-assets/nature/journal/v534/n7605/extref/nature17676-s3.zip).
 
-For indels, least squares fitting is performed. The contexts themselves serve as the mutational signatures.
+For indels, least squares fitting is not performed. The contexts themselves serve as the mutational signatures.
 
 ## Getting started
 The main functions for extracting signatures are:
