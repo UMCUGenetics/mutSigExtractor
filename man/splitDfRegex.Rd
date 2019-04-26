@@ -4,7 +4,7 @@
 \alias{splitDfRegex}
 \title{Split data frame or matrix using regex on colnames}
 \usage{
-splitDfRegex(df, patterns, return.remainder = T)
+splitDfRegex(df, patterns, return.remainder = T, names = NULL)
 }
 \arguments{
 \item{df}{A data frame of matrix}

@@ -5,7 +5,9 @@
 \title{Simplify and normalize contexts}
 \usage{
 transformContexts(contexts = NULL, snv = NULL, indel = NULL,
-  sv = NULL, simplify.types = NULL, rel.types = NULL)
+  sv = NULL, simplify.types = NULL, lsqnonneg.types = NULL,
+  rel.types = NULL, sig.profiles = list(snv = SNV_SIGNATURE_PROFILES,
+  indel = NULL, sv = SV_SIGNATURE_PROFILES), export.list = F)
 }
 \arguments{
 \item{contexts}{A list containing data frames of snv, indel, and/or sv contexts. Alternatively,
@@ -19,7 +21,13 @@ These can be specified with the arguments: snv, indel, or sv}
 
 \item{simplify.types}{Which types to flatten. Accepts: 'snv','indel','sv'}
 
+\item{lsqnonneg.types}{Which types to fit to signatures. Accepts: 'snv', 'sv'}
+
 \item{rel.types}{Which types to convert to relative contribution. Accepts: 'snv','indel','sv'}
+
+\item{sig.profiles}{A named list of the sig profiles used for lsqnonneg}
+
+\item{export.list}{Output a list with the split mutation types rather than a matrix?}
 }
 \value{
 A matrix or data frame
