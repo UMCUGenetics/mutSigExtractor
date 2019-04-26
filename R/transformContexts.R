@@ -8,7 +8,10 @@
 #' @param indel See argument 'contexts'.
 #' @param sv See argument 'contexts'.
 #' @param simplify.types Which types to flatten. Accepts: 'snv','indel','sv'
+#' @param lsqnonneg.types Which types to fit to signatures. Accepts: 'snv', 'sv'
 #' @param rel.types Which types to convert to relative contribution. Accepts: 'snv','indel','sv'
+#' @param sig.profiles A named list of the sig profiles used for lsqnonneg
+#' @param export.list Output a list with the split mutation types rather than a matrix?
 #'
 #' @return A matrix or data frame
 #' @export
@@ -22,8 +25,12 @@
 #' )
 #' transformContexts(contexts, simplify.types = c('snv','indel','sv'), rel.types = c('snv','indel','sv'))
 
-transformContexts <- function(contexts=NULL, snv=NULL, indel=NULL, sv=NULL,
-                              simplify.types=NULL, lsqnonneg.types=NULL, rel.types=NULL){
+transformContexts <- function(
+   contexts=NULL, snv=NULL, indel=NULL, sv=NULL,
+   simplify.types=NULL, lsqnonneg.types=NULL, rel.types=NULL,
+   sig.profiles=list(snv=SNV_SIGNATURE_PROFILES,indel=NULL,sv=SV_SIGNATURE_PROFILES),
+   export.list=F
+){
 
    if(!is.null(contexts)){
       snv <- if(!is.null(contexts$snv)){ contexts$snv }
@@ -42,16 +49,17 @@ transformContexts <- function(contexts=NULL, snv=NULL, indel=NULL, sv=NULL,
 
       if('snv' %in% lsqnonneg.types){
          snv <- t(apply(contexts$snv, 1, function(i){
-            fitToSignatures(SNV_SIGNATURE_PROFILES, i)$x
+            fitToSignatures(sig.profiles$snv, i)$x
          }))
          colnames(snv) <- paste0('e.',1:30)
       }
 
       if('snv' %in% rel.types){
          snv <- snv/rowSums(snv)
+         snv[is.na(snv)] <- 0
       }
 
-      out[['snv']] <- snv
+      out$snv <- snv
    }
 
    if(!is.null(indel)){
@@ -68,9 +76,10 @@ transformContexts <- function(contexts=NULL, snv=NULL, indel=NULL, sv=NULL,
 
       if('indel' %in% rel.types){
          indel <- indel/rowSums(indel)
+         indel[is.na(indel)] <- 0
       }
 
-      out[['indel']] <- indel
+      out$indel <- indel
    }
 
    if(!is.null(sv)){
@@ -83,19 +92,24 @@ transformContexts <- function(contexts=NULL, snv=NULL, indel=NULL, sv=NULL,
 
       if('sv' %in% lsqnonneg.types){
          sv <- t(apply(contexts$sv, 1, function(i){
-            fitToSignatures(SV_SIGNATURE_PROFILES, i)$x
+            fitToSignatures(sig.profiles$sv, i)$x
          }))
          colnames(sv) <- paste0('SV',1:6)
       }
 
       if('sv' %in% rel.types){
          sv <- sv/rowSums(sv)
+         sv[is.na(sv)] <- 0
       }
 
-      out[['sv']] <- sv
+      out$sv <- sv
+   }
+   if(export.list){
+      return(out)
+   } else {
+      return( do.call(cbind, unname(out)) )
    }
 
-   do.call(cbind, unname(out))
 }
 
 
