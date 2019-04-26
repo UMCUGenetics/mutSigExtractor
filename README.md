@@ -1,6 +1,7 @@
 # mutSigExtractor
 
-mutSigExtractor is an R package for extracting SNV, indel and SV mutational signatures from vcf files.
+## Package description
+mutSigExtractor is an R package for extracting SNV, indel and SV mutational signatures from vcf files. This performed in two main steps as will be described below.
 
 ### Counting mutation contexts
 The first step involves counting the mutations belonging to specific contexts for each variant type:
@@ -13,7 +14,7 @@ The contribution of each of the [30 COSMIC SNV signatures](https://cancer.sanger
 
 Similarly, the contribution of the SV signatures as described by [Nik-Zainal et al. 2016](https://www.nature.com/articles/nature17676) are calculated using the [SV signature profile matrix](https://media.nature.com/original/nature-assets/nature/journal/v534/n7605/extref/nature17676-s3.zip).
 
-For indels, no further processing is done.
+For indels, least squares fitting is performed. The contexts themselves serve as the mutational signatures.
 
 ## Getting started
 The main functions for extracting signatures are:
@@ -40,7 +41,7 @@ Ultimately, these functions return a one column data frame (essentially a vector
 ```
 extractSigsIndel('/path/to/vcf_with_indels', vcf.filter='PASS', sample.name='PD4115')
 
-				PD4115
+		PD4115
 del.rep.len.1	224
 del.rep.len.2	18
 del.rep.len.3	17
