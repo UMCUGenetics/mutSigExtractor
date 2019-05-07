@@ -44,7 +44,7 @@ transformContexts <- function(
       if('snv' %in% simplify.types){
          snv_split <- splitDfRegex(SUBSTITUTIONS, df = snv)
          snv <- do.call(cbind, lapply(snv_split, rowSums))
-         colnames(snv) <- str_replace_all(SUBSTITUTIONS,'>','.')
+         colnames(snv) <- gsub('>','.',SUBSTITUTIONS)
       }
 
       if('snv' %in% lsqnonneg.types){
