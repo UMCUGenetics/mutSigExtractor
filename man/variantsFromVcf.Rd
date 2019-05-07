@@ -4,24 +4,33 @@
 \alias{variantsFromVcf}
 \title{Extract relevant variant info for extracting SNV, indel, and SV signatures.}
 \usage{
-variantsFromVcf(vcf.file, mode = NULL, sv.caller = "manta",
-  ref.genome = DEFAULT_GENOME, chrom.group = "all",
-  vcf.filter = NULL, verbose = F)
+variantsFromVcf(vcf.file, mode = NULL, get.other.indel.allele = F,
+  sv.caller = "manta", ref.genome = DEFAULT_GENOME,
+  chrom.group = "all", vcf.filter = NULL, verbose = F)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
-\item{mode}{A character stating which type of signature is to be extracted. SNV: 'snv', indel: 'indel', SV: 'sv'.
-If unspecified, CHROM, POS, REF, and ALT will be returned}
+\item{mode}{A character stating which type of signature is to be extracted: 'snv','indel', or 'sv'}
 
-\item{ref.genome}{A character naming the BSgenome reference genome. Default is "BSgenome.Hsapiens.UCSC.hg19". If another
-reference genome is indicated, it will also need to be installed.}
+\item{get.other.indel.allele}{Only applies when mode=='indel' For indels, some vcfs only report
+the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
+allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
+will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).}
 
-\item{chrom.group}{chrom.group can be 'auto' for autosomes, 'sex' for sex chromosomes/allosomes, 'circular' for circular
-chromosomes. The default is 'all' which returns all the chromosomes.}
+\item{sv.caller}{Only applies when mode=='sv'. At this moment supports 'manta' or 'gridss'.
+Currently there is no standard to how SVs are reported in vcfs. Therefore, output from different
+callers will need to be parsed separately.}
 
-\item{vcf.filter}{A character or character vector to specifying which variants to keep, corresponding to the values in
-the vcf FILTER column}
+\item{ref.genome}{A character naming the BSgenome reference genome. Default is
+"BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
+installed.}
+
+\item{chrom.group}{chrom.group can be 'auto' for autosomes, 'sex' for sex chromosomes/allosomes,
+'circular' for circular chromosomes. The default is 'all' which returns all the chromosomes.}
+
+\item{vcf.filter}{A character or character vector to specifying which variants to keep,
+corresponding to the values in the vcf FILTER column}
 
 \item{verbose}{Print progress messages?}
 }

@@ -5,8 +5,9 @@
 \title{Extract structural variant signatures}
 \usage{
 extractSigsSv(vcf.file, output = "signatures", sample.name = NULL,
-  sv.caller = "manta", sv.len.cutoffs = c(10^3, 10^4, 10^5, 10^6, 10^7,
-  Inf), signature.profiles = SV_SIGNATURE_PROFILES, ...)
+  sv.caller = "manta", half.tra.counts = T, sv.len.cutoffs = c(10^3,
+  10^4, 10^5, 10^6, 10^7, Inf),
+  signature.profiles = SV_SIGNATURE_PROFILES, verbose = F, ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
@@ -17,10 +18,16 @@ type/length contexts ('contexts')}
 \item{sample.name}{If a character is provided, the header for the output matrix will be named to
 this. If none is provided, the basename of the vcf file will be used.}
 
+\item{sv.caller}{Can be 'manta' or 'gridss'}
+
+\item{half.tra.counts}{Divide translocation counts by 2?}
+
 \item{sv.len.cutoffs}{SV length cutoff intervals as a numeric vector.}
 
 \item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are
 the mutation contexts and the columns are  the mutational signatures.}
+
+\item{verbose}{Print progress messages?}
 }
 \value{
 A 1-column matrix

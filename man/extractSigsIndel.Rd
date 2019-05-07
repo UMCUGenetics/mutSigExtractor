@@ -6,7 +6,7 @@
 \usage{
 extractSigsIndel(vcf.file, sample.name = NULL,
   ref.genome = DEFAULT_GENOME, indel.len.cap = 5, n.bases.mh.cap = 5,
-  ...)
+  verbose = F, ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
@@ -23,6 +23,8 @@ Counts of longer indels will simply be binned to the counts of contexts at the m
 \item{n.bases.mh.cap}{Specifies the max bases in microhomology to consider when counting repeat and microhomology
 contexts. Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.}
 
+\item{verbose}{Print progress messages?}
+
 \item{...}{Other arguments that can be passed to variantsFromVcf()}
 
 \item{description}{Will return a 1-column matrix containing the absolute indel signature
@@ -31,10 +33,58 @@ signatures used are insertions/deletions within repeat regions (ins.rep, del.rep
 insertions/deletions with flanking microhomology (ins.mh, del.mh), and insertions/deletions
 which don't fall under the previous 2 categories (ins.none, del.none). Each category is further
 stratified by the length of the indel.}
+
+\item{chrom}{A character stating the chromosome}
+
+\item{pos}{The REF position as an integer}
+
+\item{indel.len}{The length of the indel as an integer}
+
+\item{indel.type}{A character stating whether the indel is an insertion ('ins') or deletion ('del')}
+
+\item{n.indel.lengths.l}{The length of the flanking sequence to return (measured in indel lengths)}
+
+\item{n.indel.lengths.r}{See n.indel.lengths.l}
+
+\item{indel.seq}{The indel sequence as a character}
+
+\item{flank.seq}{The flanking sequence as a character}
+
+\item{indel.seq}{The indel sequence as a character}
+
+\item{flank.seq}{The flanking sequence as a character}
 }
 \value{
 A 1-column matrix
+
+A vector of the left flank start/end position and right flank start/end position
+Calculate the number of copies of the indel sequence are present in the flank sequence
+
+An integer stating the number of copies found in the flanking sequence
+Calculate the number of bases that are homologous to the 3' flanking sequence
+
+An integer stating the number of bases in microhomology
 }
 \description{
-Extract indel signatures
+Helper function for extractSigsIndel(), getting flank start/end positions first, then retrieving the sequences
+using getSeq with a vectorized input improves speed significantly.
+
+Helper function for extractSigsIndel(). Scans along the flanking sequence for
+copies of the indel sequence using a sliding window with a length equal to the length of
+the indel sequence. The sliding window jumps in increments equal to the indel length.
+Scanning stops prematurely when the indel sequence does not match the one in the sliding
+window. The indel sequence itself counts as one copy.
+
+Scanning needs only to be done from the 5' -> 3' direction as the reported POS of an indel
+in a repeat region is always the first position of the repeat region.
+
+Helper function for extractSigsIndel(). Scans a maximum of 1 indel length from
+5' to 3' in the flanking sequence to detect identical bases. Stops prematurely if a
+non-identical base is found.
+
+DSBs can be repaired using 3' microhomology, which can be present relative to either the +
+or - strand. Therefore, both left and right flanking sequences of the indel need to be
+considered. When calculating left flanking homology (i.e. homology in the 3' direction for
+the - strand), the reverse complement of the indel sequence and flanking sequence need to
+be taken. However, the reverse can be taken for the calculation to save computation.
 }

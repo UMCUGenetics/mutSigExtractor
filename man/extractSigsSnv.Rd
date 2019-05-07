@@ -6,7 +6,7 @@
 \usage{
 extractSigsSnv(vcf.file, output = "signatures", sample.name = NULL,
   ref.genome = DEFAULT_GENOME,
-  signature.profiles = SNV_SIGNATURE_PROFILES, ...)
+  signature.profiles = SNV_SIGNATURE_PROFILES, verbose = F, ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
@@ -23,6 +23,8 @@ installed.}
 
 \item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are
 the mutation contexts and the columns are  the mutational signatures.}
+
+\item{verbose}{Print progress messages?}
 }
 \value{
 A 1-column matrix
