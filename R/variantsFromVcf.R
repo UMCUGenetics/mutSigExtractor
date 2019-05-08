@@ -22,7 +22,7 @@
 #' @export
 variantsFromVcf <- function(
    vcf.file, mode=NULL, get.other.indel.allele=F, sv.caller='manta',
-   ref.genome = DEFAULT_GENOME, chrom.group='all', vcf.filter=NULL, verbose=F
+   ref.genome=DEFAULT_GENOME, chrom.group='all', vcf.filter=NULL, verbose=F
 ){
 
    if(!(mode %in% c('snv','indel','sv'))){ stop("Mode must be 'snv','indel', or 'sv'") }
@@ -115,7 +115,7 @@ variantsFromVcf <- function(
       df$alt_len <- nchar(df$alt)
 
       ## Remove snvs
-      df <- df[df$ref_len!=1 & df$alt_len!=1,]
+      df <- df[!(df$ref_len==1 & df$alt_len==1),]
 
       ## Determine indel type
       df$indel_type <- with(df,{
@@ -132,51 +132,55 @@ variantsFromVcf <- function(
          },ref_len, alt_len, USE.NAMES=F))
       })
 
-      if(get.other.indel.allele){
+      if(get.other.indel.allele==T){
          if(verbose){ message('Retrieving other indel allele...') }
          df_split <- lapply(
             list(del_type=c('del','mnv_del'),ins_type=c('ins','mnv_ins'),mnv_neutral='mnv_neutral'),
             function(i){ df[df$indel_type %in% i, ] }
          )
 
-         ## Deletions
-         ## ref:   'AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
-         ## alt:  'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
-         ## nchar('AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC') = nchar(ref) = 46
-         ## getSeq(x=eval(parse(text = ref.genome)), names='chr4',start=84726292-1,84726292+46-1)
-         ##       'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
-         ## 5' base relative to ref ->
-         ##    alt column
-         ##    ref sequence
-         df_split$del_type$alt <- with(df_split$del_type, {
-            getSeq(
-               x=eval(parse(text=ref.genome)),
-               names=chrom, start=pos-1,end=pos-1,
-               as.character=T
-            )
-         })
-         df_split$del_type$ref <- with(df_split$del_type, { paste0(alt, ref) })
-         df_split$del_type$pos <- df_split$del_type$pos-1
+         if(nrow(df_split$del_type)!=0){
+            ## Deletions
+            ## ref:   'AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
+            ## alt:  'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
+            ## nchar('AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC') = nchar(ref) = 46
+            ## getSeq(x=eval(parse(text = ref.genome)), names='chr4',start=84726292-1,84726292+46-1)
+            ##       'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
+            ## 5' base relative to ref ->
+            ##    alt column
+            ##    ref sequence
+            df_split$del_type$alt <- with(df_split$del_type, {
+               getSeq(
+                  x=eval(parse(text=ref.genome)),
+                  names=chrom, start=pos-1,end=pos-1,
+                  as.character=T
+               )
+            })
+            df_split$del_type$ref <- with(df_split$del_type, { paste0(alt, ref) })
+            df_split$del_type$pos <- df_split$del_type$pos-1
+         }
 
-         ## Insertions
-         ## ref:  ''
-         ## alt:  'AGAGAGAGAGACAGAA'
-         ## nchar('AGAGAGAGAGACAGAA') = nchar(alt) = 16
-         ## getSeq(x=eval(parse(text = ref.genome)), names='chr12',start=6902128-1,6902128+16-1)
-         ##      'GAGAGAGAGAGACAGAA'
-         ## 5' base relative to alt ->
-         ##    ref column
-         ##    alt sequence
-         ## Substract 1 from pos
-         df_split$ins_type$ref <- with(df_split$ins_type, {
-            getSeq(
-               x=eval(parse(text=ref.genome)),
-               names=chrom, start=pos-1,end=pos-1,
-               as.character=T
-            )
-         })
-         df_split$ins_type$alt <- with(df_split$ins_type, { paste0(ref,alt) })
-         df_split$ins_type$pos <- df_split$ins_type$pos-1
+         if(nrow(df_split$ins_type)!=0){
+            ## Insertions
+            ## ref:  ''
+            ## alt:  'AGAGAGAGAGACAGAA'
+            ## nchar('AGAGAGAGAGACAGAA') = nchar(alt) = 16
+            ## getSeq(x=eval(parse(text = ref.genome)), names='chr12',start=6902128-1,6902128+16-1)
+            ##      'GAGAGAGAGAGACAGAA'
+            ## 5' base relative to alt ->
+            ##    ref column
+            ##    alt sequence
+            ## Substract 1 from pos
+            df_split$ins_type$ref <- with(df_split$ins_type, {
+               getSeq(
+                  x=eval(parse(text=ref.genome)),
+                  names=chrom, start=pos-1,end=pos-1,
+                  as.character=T
+               )
+            })
+            df_split$ins_type$alt <- with(df_split$ins_type, { paste0(ref,alt) })
+            df_split$ins_type$pos <- df_split$ins_type$pos-1
+         }
 
          ## Unsplit df
          df <- do.call(rbind, df_split)
