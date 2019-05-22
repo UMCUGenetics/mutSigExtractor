@@ -30,6 +30,8 @@ variantsFromVcf <- function(
    if(verbose){ message('Reading in vcf file...') }
    #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-057_snv_indel.vcf.gz'
    #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-001_snv_indel.vcf.gz'
+   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
+   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160704_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
    vcf <- readVcf(vcf.file)
 
    ## Deal with empty vcfs
@@ -244,7 +246,7 @@ variantsFromVcf <- function(
 
          df <- data.frame(
             id = names(vcf_no_partners),
-            partner_type = grep(names(vcf_no_partners), '[ob]$', value=T),
+            partner_type = unlist(regmatches(names(vcf_no_partners), gregexpr('[ob]$', names(vcf_no_partners)))),
             chrom_ref = gsub('chr','',as.character(seqnames(vcf_no_partners))),
             pos_ref = start(vcf_no_partners),
             seq_ref = as.character(rowRanges(vcf_no_partners)$REF),
@@ -253,9 +255,8 @@ variantsFromVcf <- function(
          )
 
          if(verbose){ message('Formatting ALT and calculating preliminary SV length...') }
-         alt_split <- grep('[\\d\\w]+:\\d+',df$alt, value=T)
-         alt_coord <- as.data.frame(do.call(lapply(alt_split, function(i){
-            #i=alt_split[[1]]
+         alt_coord <- regmatches(df$alt, gregexpr('\\d|\\w+:\\d+', df$alt))
+         alt_coord <- as.data.frame(do.call(rbind, lapply(alt_coord, function(i){
             if(length(i) == 0){ c(NA,NA) }
             else { unlist(strsplit(i, ':')) }
          })))
