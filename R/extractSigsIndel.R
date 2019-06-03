@@ -33,7 +33,7 @@ extractSigsIndel <- function(
    # )
 
    # variants <- variantsFromVcf(
-   #    '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-001_snv_indel.vcf.gz'
+   #    '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-057_snv_indel.vcf.gz'
    #    ,mode='indel',get.other.indel.allele=T
    # )
 
@@ -48,7 +48,7 @@ extractSigsIndel <- function(
    )
    indel_sigs <- structure(rep(0,length(indel_sig_names)), names=indel_sig_names)
 
-   if(is.data.frame(variants) && !is.na(variants)){ ## Deal with empty vcfs
+   if(is.data.frame(variants)){ ## Don't process empty vcfs (variants==NA if empty)
 
       #--------- Pre-calculations for repeat and microhomology contexts ---------#
       if(verbose){ message('Determining the start/end positions for the left/right flanks of each indel...') }

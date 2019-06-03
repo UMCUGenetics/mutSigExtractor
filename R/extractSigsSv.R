@@ -39,6 +39,12 @@ extractSigsSv <- function(
    # )
    # sv.len.cutoffs=c(0, 10^3, 10^4, 10^5, 10^6, 10^7, Inf)
 
+   # variants <- variantsFromVcf(
+   #    '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz',
+   #    mode='sv', sv.caller='gridss'
+   # )
+   # sv.len.cutoffs=c(0, 10^3, 10^4, 10^5, 10^6, 10^7, Inf)
+
    if(verbose){ message('Creating SV type/length lookup table...') }
    sv_types <- c('DEL','DUP','INV') ## INS ignored. TRA/BND dealt with in a later step
 

@@ -38,7 +38,7 @@ extractSigsSnv <- function(
       names=SUBS_CONTEXTS_96
    )
 
-   if(is.data.frame(variants) & !is.na(variants)){ ## Don't process empty vcfs
+   if(is.data.frame(variants)){ ## Don't process empty vcfs (variants==NA if empty)
       if(verbose){ message('Converting trinucleotide contexts to substitution contexts...') }
       ## Get trinucleotide contexts that don't conform to C>N or T>N
       select_opp_types <- which(!(variants$substitution %in% SUBSTITUTIONS))
