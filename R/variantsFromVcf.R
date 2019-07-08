@@ -2,10 +2,6 @@
 #'
 #' @param vcf.file Path to the vcf file
 #' @param mode A character stating which type of signature is to be extracted: 'snv','indel', or 'sv'
-#' @param get.other.indel.allele Only applies when mode=='indel' For indels, some vcfs only report
-#' the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
-#' allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
-#' will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).
 #' @param sv.caller Only applies when mode=='sv'. At this moment supports 'manta' or 'gridss'.
 #' Currently there is no standard to how SVs are reported in vcfs. Therefore, output from different
 #' callers will need to be parsed separately.
@@ -21,8 +17,8 @@
 #' @return A data frame containing the relevant variant info for extracting the indicated signature type
 #' @export
 variantsFromVcf <- function(
-   vcf.file, mode=NULL, get.other.indel.allele=F, sv.caller='manta',
-   ref.genome=DEFAULT_GENOME, chrom.group='all', vcf.filter=NULL, verbose=F
+   vcf.file, mode=NULL, sv.caller='manta', ref.genome=DEFAULT_GENOME, chrom.group='all',
+   vcf.filter=NULL, verbose=F
 ){
 
    if(!(mode %in% c('snv','indel','sv'))){ stop("Mode must be 'snv','indel', or 'sv'") }
@@ -32,6 +28,7 @@ variantsFromVcf <- function(
    #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-001_snv_indel.vcf.gz'
    #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
    #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160704_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
+   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.vcf.gz'
    vcf <- readVcf(vcf.file)
 
    ## Deal with empty vcfs
@@ -76,146 +73,20 @@ variantsFromVcf <- function(
 
       ## Unselect rows with multiple ALT sequences
       if(!identical(which(lengths(vcf_rr$ALT) > 1), integer(0))){
-         if(verbose){ message('Some rows have multiple ALT sequences. These will be removed.') }
+         if(verbose){ message('Removing rows with multiple ALT sequences...') }
          vcf_rr <- vcf_rr[which(lengths(vcf_rr$ALT) == 1)]
       }
 
       ## Get main columns
-      df <- data.frame(
+      bed <- data.frame(
          chrom=as.character(seqnames(vcf_rr)),
          pos=start(vcf_rr),
          ref=as.character(vcf_rr$REF),
          alt=as.character(unlist(vcf_rr$ALT)),
          stringsAsFactors=F
       )
-   }
 
-   #--------- SNV ---------#
-   if(mode=='snv'){
-      if(verbose){ message('Returning SNV trinucleotide contexts...') }
-      snv_contexts <- data.frame(
-         substitution = paste0(df$ref,'>',df$alt),
-         tri_context = getSeq(
-            x = eval(parse(text=ref.genome)),
-            names = seqnames(vcf_rr),
-            start = start(vcf_rr) - 1,
-            end = end(vcf_rr) + 1,
-            as.character = T
-         ),
-         stringsAsFactors = F
-      )
-      snv_contexts <- snv_contexts[nchar(df$ref)==1 & nchar(df$alt)==1,]
-      return(snv_contexts)
-   }
-
-   #--------- Indel ---------#
-   if(mode=='indel'){
-
-      if(verbose){ message('Determining indel type...') }
-      ## Calc sequence lengths
-      df$ref_len <- nchar(df$ref)
-      df$alt_len <- nchar(df$alt)
-
-      ## Remove snvs
-      df <- df[!(df$ref_len==1 & df$alt_len==1),]
-
-      ## Determine indel type
-      df$indel_type <- with(df,{
-         unlist(Map(function(ref_len, alt_len){
-            if(ref_len >= 2 & alt_len >= 2){
-               if(ref_len == alt_len){ 'mnv_neutral' }
-               else if(ref_len > alt_len){ 'mnv_del' }
-               else if(ref_len < alt_len){ 'mnv_ins' }
-            } else if(ref_len > alt_len){
-               'del'
-            } else if(ref_len < alt_len){
-               'ins'
-            }
-         },ref_len, alt_len, USE.NAMES=F))
-      })
-
-      if(get.other.indel.allele==T){
-         if(verbose){ message('Retrieving other indel allele...') }
-         df_split <- lapply(
-            list(del_type=c('del','mnv_del'),ins_type=c('ins','mnv_ins'),mnv_neutral='mnv_neutral'),
-            function(i){ df[df$indel_type %in% i, ] }
-         )
-
-         if(nrow(df_split$del_type)!=0){
-            ## Deletions
-            ## ref:   'AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
-            ## alt:  'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
-            ## nchar('AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC') = nchar(ref) = 46
-            ## getSeq(x=eval(parse(text = ref.genome)), names='chr4',start=84726292-1,84726292+46-1)
-            ##       'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
-            ## 5' base relative to ref ->
-            ##    alt column
-            ##    ref sequence
-            df_split$del_type$alt <- with(df_split$del_type, {
-               getSeq(
-                  x=eval(parse(text=ref.genome)),
-                  names=chrom, start=pos-1,end=pos-1,
-                  as.character=T
-               )
-            })
-            df_split$del_type$ref <- with(df_split$del_type, { paste0(alt, ref) })
-            df_split$del_type$pos <- df_split$del_type$pos-1
-         }
-
-         if(nrow(df_split$ins_type)!=0){
-            ## Insertions
-            ## ref:  ''
-            ## alt:  'AGAGAGAGAGACAGAA'
-            ## nchar('AGAGAGAGAGACAGAA') = nchar(alt) = 16
-            ## getSeq(x=eval(parse(text = ref.genome)), names='chr12',start=6902128-1,6902128+16-1)
-            ##      'GAGAGAGAGAGACAGAA'
-            ## 5' base relative to alt ->
-            ##    ref column
-            ##    alt sequence
-            ## Substract 1 from pos
-            df_split$ins_type$ref <- with(df_split$ins_type, {
-               getSeq(
-                  x=eval(parse(text=ref.genome)),
-                  names=chrom, start=pos-1,end=pos-1,
-                  as.character=T
-               )
-            })
-            df_split$ins_type$alt <- with(df_split$ins_type, { paste0(ref,alt) })
-            df_split$ins_type$pos <- df_split$ins_type$pos-1
-         }
-
-         ## Unsplit df
-         df <- do.call(rbind, df_split)
-         rownames(df) <- NULL
-
-         ## Recalculate ref/alt length
-         df$ref_len <- nchar(df$ref)
-         df$alt_len <- nchar(df$alt)
-      }
-
-      if(verbose){ message('Determining indel length and sequence...') }
-      ## Determine indel length
-      df$indel_len <- abs(df$alt_len-df$ref_len)
-
-      ## Determine indel seq
-      df$indel_seq <- with(df,{
-         unlist(Map(function(ref,alt,indel_type,indel_len){
-            indel_start_pos <- 2
-            if(indel_type %in% c('del','mnv_del')){ ## dels
-               substring(ref, indel_start_pos, indel_start_pos+indel_len-1)
-            } else if(indel_type %in% c('ins','mnv_ins')){ ## ins
-               substring(alt, indel_start_pos, indel_start_pos+indel_len-1)
-            } else {
-               NA
-            }
-         },ref,alt,indel_type,indel_len, USE.NAMES=F))
-      })
-
-      ## Output
-      if(verbose){ message('Returning indel characteristics...') }
-      out <- df[df$indel_type %in% c('ins','del'),]
-      out <- out[,c('chrom','pos','ref','alt','indel_len','indel_type','indel_seq')]
-      return(out)
+      return(bed)
    }
 
    #========= SV =========#

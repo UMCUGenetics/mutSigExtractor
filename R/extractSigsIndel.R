@@ -1,3 +1,128 @@
+#' Extract indel sequence, type and length
+#'
+#' @param bed A dataframe containing the columns: chrom, pos, ref, alt
+#' @param ref.genome A character naming the BSgenome reference genome. Default is
+#' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
+#' installed.
+#' @param get.other.indel.allele Only applies when mode=='indel' For indels, some vcfs only report
+#' the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
+#' allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
+#' will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).
+#' @param verbose Print progress messages?
+#'
+#' @return A dataframe in the same structure as a bed file
+#' @export
+getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.allele=F, verbose=F){
+
+   if(verbose){ message('Determining indel type...') }
+   ## Calc sequence lengths
+   bed$ref_len <- nchar(bed$ref)
+   bed$alt_len <- nchar(bed$alt)
+
+   ## Remove snvs
+   bed <- bed[!(bed$ref_len==1 & bed$alt_len==1),]
+
+   ## Determine indel type
+   bed$indel_type <- with(bed,{
+      unlist(Map(function(ref_len, alt_len){
+         if(ref_len >= 2 & alt_len >= 2){
+            if(ref_len == alt_len){ 'mnv_neutral' }
+            else if(ref_len > alt_len){ 'mnv_del' }
+            else if(ref_len < alt_len){ 'mnv_ins' }
+         } else if(ref_len > alt_len){
+            'del'
+         } else if(ref_len < alt_len){
+            'ins'
+         }
+      },ref_len, alt_len, USE.NAMES=F))
+   })
+
+   if(get.other.indel.allele==T){
+      if(verbose){ message('Retrieving other indel allele...') }
+      bed_split <- lapply(
+         list(del_type=c('del','mnv_del'),ins_type=c('ins','mnv_ins'),mnv_neutral='mnv_neutral'),
+         function(i){ bed[bed$indel_type %in% i, ] }
+      )
+
+      if(nrow(bed_split$del_type)!=0){
+         ## Deletions
+         ## ref:   'AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
+         ## alt:  'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
+         ## nchar('AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC') = nchar(ref) = 46
+         ## getSeq(x=eval(parse(text = ref.genome)), names='chr4',start=84726292-1,84726292+46-1)
+         ##       'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
+         ## 5' base relative to ref ->
+         ##    alt column
+         ##    ref sequence
+         bed_split$del_type$alt <- with(bed_split$del_type, {
+            getSeq(
+               x=eval(parse(text=ref.genome)),
+               names=chrom, start=pos-1,end=pos-1,
+               as.character=T
+            )
+         })
+         bed_split$del_type$ref <- with(bed_split$del_type, { paste0(alt, ref) })
+         bed_split$del_type$pos <- bed_split$del_type$pos-1
+      }
+
+      if(nrow(bed_split$ins_type)!=0){
+         ## Insertions
+         ## ref:  ''
+         ## alt:  'AGAGAGAGAGACAGAA'
+         ## nchar('AGAGAGAGAGACAGAA') = nchar(alt) = 16
+         ## getSeq(x=eval(parse(text = ref.genome)), names='chr12',start=6902128-1,6902128+16-1)
+         ##      'GAGAGAGAGAGACAGAA'
+         ## 5' base relative to alt ->
+         ##    ref column
+         ##    alt sequence
+         ## Substract 1 from pos
+         bed_split$ins_type$ref <- with(bed_split$ins_type, {
+            getSeq(
+               x=eval(parse(text=ref.genome)),
+               names=chrom, start=pos-1,end=pos-1,
+               as.character=T
+            )
+         })
+         bed_split$ins_type$alt <- with(bed_split$ins_type, { paste0(ref,alt) })
+         bed_split$ins_type$pos <- bed_split$ins_type$pos-1
+      }
+
+      ## Unsplit bed
+      bed <- do.call(rbind, bed_split)
+      rownames(bed) <- NULL
+
+      ## Recalculate ref/alt length
+      bed$ref_len <- nchar(bed$ref)
+      bed$alt_len <- nchar(bed$alt)
+   }
+
+   if(verbose){ message('Determining indel length and sequence...') }
+   ## Determine indel length
+   bed$indel_len <- abs(bed$alt_len-bed$ref_len)
+
+   ## Determine indel seq
+   bed$indel_seq <- with(bed,{
+      unlist(Map(function(ref,alt,indel_type,indel_len){
+         indel_start_pos <- 2
+         if(indel_type %in% c('del','mnv_del')){ ## dels
+            substring(ref, indel_start_pos, indel_start_pos+indel_len-1)
+         } else if(indel_type %in% c('ins','mnv_ins')){ ## ins
+            substring(alt, indel_start_pos, indel_start_pos+indel_len-1)
+         } else {
+            NA
+         }
+      },ref,alt,indel_type,indel_len, USE.NAMES=F))
+   })
+
+   ## Output
+   if(verbose){ message('Returning indel characteristics...') }
+   out <- bed[bed$indel_type %in% c('ins','del'),]
+   out <- out[,c('chrom','pos','ref','alt','indel_len','indel_type','indel_seq')]
+   return(out)
+}
+
+####################################################################################################
+
 #' Extract indel signatures
 #'
 #' @param description Will return a 1-column matrix containing the absolute indel signature
@@ -16,26 +141,30 @@
 #' Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.
 #' @param n.bases.mh.cap Specifies the max bases in microhomology to consider when counting repeat and microhomology
 #' contexts. Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.
+#' @param get.other.indel.allele Only applies when mode=='indel' For indels, some vcfs only report
+#' the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
+#' allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
+#' will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).
 #' @param verbose Print progress messages?
 #' @param ... Other arguments that can be passed to variantsFromVcf()
 #'
 #' @return A 1-column matrix
 #' @export
-
 extractSigsIndel <- function(
-   vcf.file, sample.name=NULL, ref.genome=DEFAULT_GENOME,
-   indel.len.cap=5, n.bases.mh.cap=5, verbose=F, ...
+   vcf.file=NULL, bed=NULL, sample.name=NULL, ref.genome=DEFAULT_GENOME,
+   indel.len.cap=5, n.bases.mh.cap=5, get.other.indel.allele=F, verbose=F, ...
 ){
-   variants <- variantsFromVcf(vcf.file, mode = 'indel', ref.genome, verbose=verbose, ...)
-   # variants <- variantsFromVcf(
-   #    vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/BRCA-EU/snv_indel/PD10010_snv_indel.vcf.gz',
-   #    mode = 'indel', ref.genome
-   # )
 
-   # variants <- variantsFromVcf(
-   #    '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-057_snv_indel.vcf.gz'
-   #    ,mode='indel',get.other.indel.allele=T
-   # )
+   if(verbose){ message('Loading variants...') }
+   if(!is.null(vcf.file)){
+      bed <- variantsFromVcf(vcf.file, mode='indel', ref.genome=ref.genome, verbose=verbose, ...)
+      # df <- variantsFromVcf(
+      #    vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/BRCA-EU/snv_indel/PD10010_snv_indel.vcf.gz',
+      #    mode = 'indel', ref.genome
+      # )
+   }
+   df <- getContextsIndel(bed, ref.genome=ref.genome, verbose=verbose, get.other.indel.allele=get.other.indel.allele)
+
 
    if(verbose){ message('Initializing indel signature output vector...') }
    indel_sig_names <- c(
@@ -48,7 +177,7 @@ extractSigsIndel <- function(
    )
    indel_sigs <- structure(rep(0,length(indel_sig_names)), names=indel_sig_names)
 
-   if(is.data.frame(variants)){ ## Don't process empty vcfs (variants==NA if empty)
+   if(is.data.frame(df)){ ## Don't process empty vcfs (df==NA if empty)
 
       #--------- Pre-calculations for repeat and microhomology contexts ---------#
       if(verbose){ message('Determining the start/end positions for the left/right flanks of each indel...') }
@@ -93,7 +222,7 @@ extractSigsIndel <- function(
       ## Cap n.indel.lengths.r to 3 (length of 3' (right-hand side) sequence to retrieve),
       ## since the max n_copies_along_flank condition used below caps at >=2.
       ## This improves speed significantly
-      flanks_start_end <- with(variants,{
+      flanks_start_end <- with(df,{
          do.call(rbind, Map(
             f = indelSeqFlanksStartEnd,
             chrom, pos, indel_len, indel_type,
@@ -104,7 +233,7 @@ extractSigsIndel <- function(
       if(verbose){ message('Retrieving flanking sequences...') }
       l_flank <- getSeq(
          x = eval(parse(text=ref.genome)),
-         names = variants$chrom,
+         names = df$chrom,
          start = flanks_start_end[,'l_start'],
          end = flanks_start_end[,'l_end'],
          as.character = T
@@ -112,7 +241,7 @@ extractSigsIndel <- function(
 
       r_flank <- getSeq(
          x = eval(parse(text=ref.genome)),
-         names = variants$chrom,
+         names = df$chrom,
          start = flanks_start_end[,'r_start'],
          end = flanks_start_end[,'r_end'],
          as.character = T
@@ -155,7 +284,7 @@ extractSigsIndel <- function(
 
          return(count)
       }
-      n_copies_along_flank <- unlist(Map(nCopiesAlongFlank, variants$indel_seq, r_flank, USE.NAMES=F))
+      n_copies_along_flank <- unlist(Map(nCopiesAlongFlank, df$indel_seq, r_flank, USE.NAMES=F))
 
       #--------- Microhomology contexts ---------#
       if(verbose){ message("Calculating the (max) number of bases that are homologous to the 5'/3' flanking sequence...") }
@@ -200,7 +329,7 @@ extractSigsIndel <- function(
 
          max(mh_l,mh_r)
 
-      }, variants$indel_seq, l_flank, r_flank, USE.NAMES=F))
+      }, df$indel_seq, l_flank, r_flank, USE.NAMES=F))
 
       #--------- Assign repeat, microhomology, or no context ---------#
       if(verbose){ message('Determining indel contexts...') }
@@ -220,15 +349,15 @@ extractSigsIndel <- function(
 
          return(context)
 
-      }, n_copies_along_flank, n_bases_mh, variants$indel_len))
+      }, n_copies_along_flank, n_bases_mh, df$indel_len))
 
       #--------- Gather components for counting final contexts/signatures ---------#
       if(verbose){ message('Counting indel context occurrences...') }
       ## Slightly redundant (could have just assigned components to a dataframe). But easier to debug
       sig_parts <- data.frame(
-         indel_type = variants$indel_type,
+         indel_type = df$indel_type,
          context,
-         indel_len = variants$indel_len,
+         indel_len = df$indel_len,
          n_copies_along_flank,
          n_bases_mh
       )
@@ -264,3 +393,5 @@ extractSigsIndel <- function(
 }
 
 
+# vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.vcf.gz'
+# sigs <- extractSigsIndel(vcf.file, vcf.filter='PASS', verbose=T)
