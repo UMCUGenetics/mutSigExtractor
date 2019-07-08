@@ -4,19 +4,14 @@
 \alias{variantsFromVcf}
 \title{Extract relevant variant info for extracting SNV, indel, and SV signatures.}
 \usage{
-variantsFromVcf(vcf.file, mode = NULL, get.other.indel.allele = F,
-  sv.caller = "manta", ref.genome = DEFAULT_GENOME,
-  chrom.group = "all", vcf.filter = NULL, verbose = F)
+variantsFromVcf(vcf.file, mode = NULL, sv.caller = "manta",
+  ref.genome = DEFAULT_GENOME, chrom.group = "all",
+  vcf.filter = NULL, verbose = F)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
 \item{mode}{A character stating which type of signature is to be extracted: 'snv','indel', or 'sv'}
-
-\item{get.other.indel.allele}{Only applies when mode=='indel' For indels, some vcfs only report
-the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
-allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
-will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).}
 
 \item{sv.caller}{Only applies when mode=='sv'. At this moment supports 'manta' or 'gridss'.
 Currently there is no standard to how SVs are reported in vcfs. Therefore, output from different

@@ -4,9 +4,9 @@
 \alias{extractSigsIndel}
 \title{Extract indel signatures}
 \usage{
-extractSigsIndel(vcf.file, sample.name = NULL,
+extractSigsIndel(vcf.file = NULL, bed = NULL, sample.name = NULL,
   ref.genome = DEFAULT_GENOME, indel.len.cap = 5, n.bases.mh.cap = 5,
-  verbose = F, ...)
+  get.other.indel.allele = F, verbose = F, ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
@@ -22,6 +22,11 @@ Counts of longer indels will simply be binned to the counts of contexts at the m
 
 \item{n.bases.mh.cap}{Specifies the max bases in microhomology to consider when counting repeat and microhomology
 contexts. Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.}
+
+\item{get.other.indel.allele}{Only applies when mode=='indel' For indels, some vcfs only report
+the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
+allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
+will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).}
 
 \item{verbose}{Print progress messages?}
 

@@ -4,8 +4,8 @@
 \alias{extractSigsSnv}
 \title{Extract single nucleotide variant signatures}
 \usage{
-extractSigsSnv(vcf.file, output = "signatures", sample.name = NULL,
-  ref.genome = DEFAULT_GENOME,
+extractSigsSnv(vcf.file = NULL, bed = NULL, output = "signatures",
+  sample.name = NULL, ref.genome = DEFAULT_GENOME,
   signature.profiles = SNV_SIGNATURE_PROFILES, verbose = F, ...)
 }
 \arguments{
