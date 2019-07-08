@@ -14,6 +14,15 @@
 #' @export
 getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.allele=F, verbose=F){
 
+   bed_colnames <- c('chrom','pos','ref','alt')
+   if(!(identical(colnames(bed)[1:4], bed_colnames))){
+      warning("colnames(bed)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
+      colnames(bed)[1:4] <- bed_colnames
+   }
+
+   if(verbose){ message('Converting chrom name style to style in ref.genome...') }
+   seqlevelsStyle(bed$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
+
    if(verbose){ message('Determining indel type...') }
    ## Calc sequence lengths
    bed$ref_len <- nchar(bed$ref)

@@ -10,11 +10,20 @@
 #' @export
 getContextsSnv <- function(bed, ref.genome=DEFAULT_GENOME, verbose=F){
 
+   bed_colnames <- c('chrom','pos','ref','alt')
+   if(!(identical(colnames(bed)[1:4], bed_colnames))){
+      warning("colnames(bed)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
+      colnames(bed)[1:4] <- bed_colnames
+   }
+
    if(verbose){ message('Removing rows with multiple ALT sequences...') }
    bed <- bed[!grepl(',',bed$alt),]
 
    if(verbose){ message('Subsetting for SNVs...') }
    bed <- bed[nchar(bed$ref)==1 & nchar(bed$alt)==1,]
+
+   if(verbose){ message('Converting chrom name style to style in ref.genome...') }
+   seqlevelsStyle(bed$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
 
    if(verbose){ message('Returning SNV trinucleotide contexts...') }
    out <- data.frame(
@@ -66,9 +75,9 @@ extractSigsSnv <- function(
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       bed <- variantsFromVcf(vcf.file, mode='snv', ref.genome=ref.genome, verbose=verbose, ...)
-      # variants <- variantsFromVcf(
+      # bed <- variantsFromVcf(
       #    vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.vcf.gz',
-      #    mode = 'snv', ref.genome
+      #    mode = 'snv', ref.genome=ref.genome
       # )
    }
    df <- getContextsSnv(bed, ref.genome=ref.genome, verbose=verbose)
