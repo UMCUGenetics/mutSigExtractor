@@ -113,7 +113,7 @@ variantsFromVcf <- function(
 
       if(sv.caller=='gridss'){
          if(verbose){ message('Retrieving sense partners and unpartnered SVs...') }
-         vcf_no_partners <- vcf[grepl('o', names(vcf)) | grepl('b', names(vcf))]
+         vcf_no_partners <- vcf[grepl('o$', names(vcf)) | grepl('b$', names(vcf))]
 
          df <- data.frame(
             id = names(vcf_no_partners),
