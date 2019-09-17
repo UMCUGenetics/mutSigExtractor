@@ -21,14 +21,10 @@ variantsFromVcf <- function(
    vcf.filter=NULL, verbose=F
 ){
 
-   if(!(mode %in% c('snv','indel','sv'))){ stop("Mode must be 'snv','indel', or 'sv'") }
+   if(!(mode %in% c('snv_indel','sv'))){ stop("Mode must be 'snv_indel', or 'sv'") }
 
    if(verbose){ message('Reading in vcf file...') }
-   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-057_snv_indel.vcf.gz'
-   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/OV-AU/snv_indel/AOCS-001_snv_indel.vcf.gz'
-   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
-   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160704_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
-   #vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.vcf.gz'
+
    vcf <- readVcf(vcf.file)
 
    ## Deal with empty vcfs
@@ -68,7 +64,7 @@ variantsFromVcf <- function(
    }
 
    #========= SNV/Indels =========#
-   if(mode=='snv' || mode=='indel'){
+   if(mode=='snv_indel'){
       vcf_rr <- rowRanges(vcf)
 
       ## Unselect rows with multiple ALT sequences
