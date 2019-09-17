@@ -168,10 +168,6 @@ extractSigsIndel <- function(
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       bed <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
-      # df <- variantsFromVcf(
-      #    vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/BRCA-EU/snv_indel/PD10010_snv_indel.vcf.gz',
-      #    mode = 'indel', ref.genome
-      # )
    }
    df <- getContextsIndel(bed, ref.genome=ref.genome, verbose=verbose, get.other.indel.allele=get.other.indel.allele)
 
