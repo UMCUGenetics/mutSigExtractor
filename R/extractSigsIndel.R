@@ -142,6 +142,7 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
 #' stratified by the length of the indel.
 #'
 #' @param vcf.file Path to the vcf file
+#' @param bed A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
 #' @param sample.name If a character is provided, the header for the output matrix will be named to this. If none is
 #' provided, the basename of the vcf file will be used.
 #' @param ref.genome A character naming the BSgenome reference genome. Default is "BSgenome.Hsapiens.UCSC.hg19". If another
@@ -166,14 +167,13 @@ extractSigsIndel <- function(
 
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      bed <- variantsFromVcf(vcf.file, mode='indel', ref.genome=ref.genome, verbose=verbose, ...)
+      bed <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
       # df <- variantsFromVcf(
       #    vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/BRCA-EU/snv_indel/PD10010_snv_indel.vcf.gz',
       #    mode = 'indel', ref.genome
       # )
    }
    df <- getContextsIndel(bed, ref.genome=ref.genome, verbose=verbose, get.other.indel.allele=get.other.indel.allele)
-
 
    if(verbose){ message('Initializing indel signature output vector...') }
    indel_sig_names <- c(
@@ -396,11 +396,14 @@ extractSigsIndel <- function(
    if(verbose){ message('Returning indel context counts...') }
    out <- matrix(indel_sigs, ncol = 1)
    rownames(out) <- names(indel_sigs)
-   colnames(out) <- if(is.null(sample.name)){ basename(vcf.file) } else { sample.name }
+
+   colnames(out) <-
+      if(is.null(sample.name)){
+         if(!is.null(vcf.file)){ basename(vcf.file) }
+         else { 'unknown_sample' }
+      } else {
+         sample.name
+      }
 
    return(out)
 }
-
-
-# vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.vcf.gz'
-# sigs <- extractSigsIndel(vcf.file, vcf.filter='PASS', verbose=T)

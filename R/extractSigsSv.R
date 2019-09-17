@@ -13,6 +13,8 @@
 #' clustered/non-clustered were not considered.
 #'
 #' @param vcf.file Path to the vcf file
+#' @param df A dataframe with the columns: sv_type, sv_len. sv_type can be DEL, DUP, INV, TRA, BND.
+#' Note that for TRA and BND, sv_len will be ignored. Alternative input option to vcf.file
 #' @param output Output the absolute signature contributions (default, 'signatures'), or the SV
 #' type/length contexts ('contexts')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
@@ -28,22 +30,13 @@
 #' @export
 
 extractSigsSv <- function(
-   vcf.file, output='signatures', sample.name=NULL, sv.caller='manta', half.tra.counts=T,
+   vcf.file=NULL, df=NULL, output='signatures', sample.name=NULL, sv.caller='manta', half.tra.counts=T,
    sv.len.cutoffs=c(10^3, 10^4, 10^5, 10^6, 10^7, Inf), signature.profiles=SV_SIGNATURE_PROFILES,
    verbose=F, ...
 ){
-   variants <- variantsFromVcf(vcf.file, mode='sv', sv.caller=sv.caller, verbose=verbose, ...)
-   # variants <- variantsFromVcf(
-   #    '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/ICGC/vcf/BRCA-EU/sv/PD10010_sv.vcf.gz',
-   #    mode='sv', sv.caller='manta'
-   # )
-   # sv.len.cutoffs=c(0, 10^3, 10^4, 10^5, 10^6, 10^7, Inf)
-
-   # variants <- variantsFromVcf(
-   #    '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz',
-   #    mode='sv', sv.caller='gridss'
-   # )
-   # sv.len.cutoffs=c(0, 10^3, 10^4, 10^5, 10^6, 10^7, Inf)
+   if(!is.null(vcf.file)){
+      df <- variantsFromVcf(vcf.file, mode='sv', sv.caller=sv.caller, verbose=verbose, ...)
+   }
 
    if(verbose){ message('Creating SV type/length lookup table...') }
    sv_types <- c('DEL','DUP','INV') ## INS ignored. TRA/BND dealt with in a later step
@@ -67,7 +60,7 @@ extractSigsSv <- function(
    })
 
    ## Deal with empty vcfs
-   if(!is.data.frame(variants) && is.na(variants)){
+   if(!is.data.frame(df) && is.na(df)){
       context_counts <- rep(0, nrow(sv_contexts)+1)
    }
 
@@ -75,10 +68,10 @@ extractSigsSv <- function(
       if(verbose){ message('Counting DEL, DUP, and INV context occurrences...') }
       context_counts <- unlist(lapply(1:nrow(sv_contexts), function(i){
          row <- sv_contexts[i,]
-         variants_ss <- variants[
-            variants$sv_type == row$sv_type
-            & variants$sv_len >= row$lower_cutoff
-            & variants$sv_len < row$upper_cutoff
+         variants_ss <- df[
+            df$sv_type == row$sv_type
+            & df$sv_len >= row$lower_cutoff
+            & df$sv_len < row$upper_cutoff
             ,]
 
          nrow(variants_ss)
@@ -86,7 +79,7 @@ extractSigsSv <- function(
 
       ## Count context occurrences for translocations
       if(verbose){ message('Counting TRA occurrences...') }
-      translocation_counts <- nrow(variants[variants$sv_type == 'BND' | variants$sv_type == 'TRA',])
+      translocation_counts <- nrow(df[df$sv_type == 'BND' | df$sv_type == 'TRA',])
 
       if(sv.caller=='manta' & half.tra.counts){ ## manta reports translocations twice (origin/destination)
          if(verbose){ message('Halving TRA counts...') }
@@ -117,6 +110,13 @@ extractSigsSv <- function(
       out <- as.matrix(out)
    }
 
-   colnames(out) <- if(is.null(sample.name)){ basename(vcf.file) } else { sample.name }
+   colnames(out) <-
+      if(is.null(sample.name)){
+         if(!is.null(vcf.file)){ basename(vcf.file) }
+         else { 'unknown_sample' }
+      } else {
+         sample.name
+      }
+
    return(out)
 }

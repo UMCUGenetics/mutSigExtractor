@@ -53,6 +53,7 @@ getContextsSnv <- function(bed, ref.genome=DEFAULT_GENOME, verbose=F){
 #' which are derived from the 96-trinucleotide mutation contexts.
 #'
 #' @param vcf.file Path to the vcf file
+#' @param bed A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
 #' @param output Output the absolute signature contributions (default, 'signatures'), or the
 #' 96-trinucleotide contexts ('contexts')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
@@ -74,11 +75,7 @@ extractSigsSnv <- function(
 
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      bed <- variantsFromVcf(vcf.file, mode='snv', ref.genome=ref.genome, verbose=verbose, ...)
-      # bed <- variantsFromVcf(
-      #    vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.vcf.gz',
-      #    mode = 'snv', ref.genome=ref.genome
-      # )
+      bed <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
    }
    df <- getContextsSnv(bed, ref.genome=ref.genome, verbose=verbose)
 
@@ -127,11 +124,13 @@ extractSigsSnv <- function(
       out <- as.matrix(out)
    }
 
-   colnames(out) <- if(is.null(sample.name)){ basename(vcf.file) } else { sample.name }
+   colnames(out) <-
+      if(is.null(sample.name)){
+         if(!is.null(vcf.file)){ basename(vcf.file) }
+         else { 'unknown_sample' }
+      } else {
+         sample.name
+      }
 
    return(out)
 }
-
-
-# vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160709_HMFregXXXXXXXX/XXXXXXXX.vcf.gz'
-# sigs <- extractSigsSnv(vcf.file, output='contexts', vcf.filter='PASS', verbose=T)
