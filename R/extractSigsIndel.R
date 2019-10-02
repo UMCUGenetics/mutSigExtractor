@@ -30,6 +30,10 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
 
    ## Remove snvs
    bed <- bed[!(bed$ref_len==1 & bed$alt_len==1),]
+   if(nrow(bed)==0){
+      warning('No variants remained after subsetting for indels. Returning NA')
+      return(NA)
+   }
 
    ## Determine indel type
    bed$indel_type <- with(bed,{
@@ -390,6 +394,7 @@ extractSigsIndel <- function(
    }
 
    if(verbose){ message('Returning indel context counts...') }
+   if(verbose & !is.data.frame(df)){ warning("Input to extractSigsIndel() contained no variants. Returning dataframe of 0's") }
    out <- matrix(indel_sigs, ncol = 1)
    rownames(out) <- names(indel_sigs)
 

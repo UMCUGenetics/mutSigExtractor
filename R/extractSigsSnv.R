@@ -21,6 +21,10 @@ getContextsSnv <- function(bed, ref.genome=DEFAULT_GENOME, verbose=F){
 
    if(verbose){ message('Subsetting for SNVs...') }
    bed <- bed[nchar(bed$ref)==1 & nchar(bed$alt)==1,]
+   if(nrow(bed)==0){
+      warning('No variants remained after subsetting for SNVs. Returning NA')
+      return(NA)
+   }
 
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
    seqlevelsStyle(bed$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
@@ -123,6 +127,7 @@ extractSigsSnv <- function(
       names(out) <- colnames(signature.profiles)
       out <- as.matrix(out)
    }
+   if(verbose & !is.data.frame(df)){ warning("Input to extractSigsSnv() contained no variants. Returning dataframe of 0's") }
 
    colnames(out) <-
       if(is.null(sample.name)){
