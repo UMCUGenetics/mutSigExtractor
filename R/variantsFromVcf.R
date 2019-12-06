@@ -17,8 +17,8 @@
 #' @return A data frame containing the relevant variant info for extracting the indicated signature type
 #' @export
 variantsFromVcf <- function(
-   vcf.file, mode=NULL, sv.caller='manta', ref.genome=DEFAULT_GENOME, chrom.group='all',
-   vcf.filter=NULL, verbose=F
+   vcf.file, mode=NULL, sv.caller='gridss', ref.genome=DEFAULT_GENOME, chrom.group='all',
+   vcf.filter=NA, verbose=F
 ){
 
    if(!(mode %in% c('snv_indel','sv'))){ stop("Mode must be 'snv_indel', or 'sv'") }
@@ -53,7 +53,7 @@ variantsFromVcf <- function(
    }
 
    ## Filter vcf
-   if(!is.null(vcf.filter)){
+   if(!is.na(vcf.filter)){
       if(verbose){ message('Only keeping variants where FILTER %in% c(', paste(vcf.filter,collapse=', '), ')' ) }
       vcf <- vcf[which(rowRanges(vcf)$FILTER %in% vcf.filter)]
    }
@@ -62,6 +62,7 @@ variantsFromVcf <- function(
       warning('After filtering, VCF contains no rows. Returning NA')
       stop(return(NA))
    }
+
 
    #========= SNV/Indels =========#
    if(mode=='snv_indel'){
@@ -109,6 +110,13 @@ variantsFromVcf <- function(
 
       if(sv.caller=='gridss'){
          if(verbose){ message('Retrieving sense partners and unpartnered SVs...') }
+
+         ## ID nomenclature:
+         ## ends with o: 5' breakend
+         ## ends with h: 3' breakend
+         ## ends with b: unpaired breakend
+         ## 'o' breakends have positive SV length
+
          vcf_no_partners <- vcf[grepl('o$', names(vcf)) | grepl('b$', names(vcf))]
 
          df <- data.frame(
