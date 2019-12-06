@@ -11,6 +11,8 @@ extractSigsSnv(vcf.file = NULL, bed = NULL, output = "signatures",
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
+\item{bed}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
+
 \item{output}{Output the absolute signature contributions (default, 'signatures'), or the
 96-trinucleotide contexts ('contexts')}
 

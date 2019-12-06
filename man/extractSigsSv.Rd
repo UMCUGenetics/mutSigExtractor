@@ -4,13 +4,17 @@
 \alias{extractSigsSv}
 \title{Extract structural variant signatures}
 \usage{
-extractSigsSv(vcf.file, output = "signatures", sample.name = NULL,
-  sv.caller = "manta", half.tra.counts = T, sv.len.cutoffs = c(10^3,
-  10^4, 10^5, 10^6, 10^7, Inf),
+extractSigsSv(vcf.file = NULL, df = NULL, output = "signatures",
+  sample.name = NULL, sv.caller = "gridss", half.tra.counts = F,
+  sv.len.cutoffs = if (output == "signatures") {     c(10^c(3:7), Inf) }
+  else {     c(0, 10^c(3:7), Inf) },
   signature.profiles = SV_SIGNATURE_PROFILES, verbose = F, ...)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
+
+\item{df}{A dataframe with the columns: sv_type, sv_len. sv_type can be DEL, DUP, INV, TRA, BND.
+Note that for TRA and BND, sv_len will be ignored. Alternative input option to vcf.file}
 
 \item{output}{Output the absolute signature contributions (default, 'signatures'), or the SV
 type/length contexts ('contexts')}

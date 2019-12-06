@@ -4,9 +4,9 @@
 \alias{variantsFromVcf}
 \title{Extract relevant variant info for extracting SNV, indel, and SV signatures.}
 \usage{
-variantsFromVcf(vcf.file, mode = NULL, sv.caller = "manta",
-  ref.genome = DEFAULT_GENOME, chrom.group = "all",
-  vcf.filter = NULL, verbose = F)
+variantsFromVcf(vcf.file, mode = NULL, sv.caller = "gridss",
+  ref.genome = DEFAULT_GENOME, chrom.group = "all", vcf.filter = NA,
+  verbose = F)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
