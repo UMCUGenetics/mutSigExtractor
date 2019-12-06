@@ -1,11 +1,10 @@
 Package: mutSigExtractor
 Type: Package
-Title: Extracts SNV, indel, and SV signatures from vcf files
-Version: 1.03
+Title: Extracts SNV, indel, and SV signatures from vcf files.
+Version: 1.04
 Author: Luan Nguyen
 Maintainer: The package maintainer <n.l.nguyen-2@umcutrecht.nl>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Extracts SNV, indel, and SV signatures from vcf files.
 License: MIT
 Encoding: UTF-8
 LazyData: true
