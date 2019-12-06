@@ -30,12 +30,19 @@
 #' @export
 
 extractSigsSv <- function(
-   vcf.file=NULL, df=NULL, output='signatures', sample.name=NULL, sv.caller='manta', half.tra.counts=T,
-   sv.len.cutoffs=c(10^3, 10^4, 10^5, 10^6, 10^7, Inf), signature.profiles=SV_SIGNATURE_PROFILES,
+   vcf.file=NULL, df=NULL, output='signatures', sample.name=NULL,
+   sv.caller='gridss', half.tra.counts=F,
+   sv.len.cutoffs=if(output=='signatures'){ c(10^c(3:7), Inf) } else { c(0, 10^c(3:7), Inf) },
+   signature.profiles=SV_SIGNATURE_PROFILES,
    verbose=F, ...
 ){
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, mode='sv', sv.caller=sv.caller, verbose=verbose, ...)
+   } else if(!is.null(df)){
+      colnames(df) <- c('sv_type','sv_len')
+      half.tra.counts <- F ## If providing dataframe as input default to 'manta'.
+   } else {
+      stop('Please specify either vcf.file or df as input')
    }
 
    if(verbose){ message('Creating SV type/length lookup table...') }
