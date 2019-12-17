@@ -4,8 +4,7 @@
 \alias{readSigsAsDf}
 \title{Read multiple files outputed my mutSigExtractor into a data frame}
 \usage{
-readSigsAsDf(dir = NULL, files = NULL, samples.as.rows = T,
-  verbose = T, ...)
+readSigsAsDf(dir = NULL, files = NULL, samples.as.rows = T, verbose = T, ...)
 }
 \arguments{
 \item{dir}{A directory from which to read the signatures/contexts}

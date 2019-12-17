@@ -4,11 +4,15 @@
 \alias{getContextsIndel}
 \title{Extract indel sequence, type and length}
 \usage{
-getContextsIndel(bed, ref.genome = DEFAULT_GENOME,
-  get.other.indel.allele = F, verbose = F)
+getContextsIndel(
+  df,
+  ref.genome = DEFAULT_GENOME,
+  get.other.indel.allele = F,
+  verbose = F
+)
 }
 \arguments{
-\item{bed}{A dataframe containing the columns: chrom, pos, ref, alt}
+\item{df}{A dataframe containing the columns: chrom, pos, ref, alt}
 
 \item{ref.genome}{A character naming the BSgenome reference genome. Default is
 "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
@@ -22,7 +26,7 @@ will also be added to the indel sequence and the POS will be adjusted accordingl
 \item{verbose}{Print progress messages?}
 }
 \value{
-A dataframe in the same structure as a bed file
+A dataframe in the same structure as a df file
 }
 \description{
 Extract indel sequence, type and length

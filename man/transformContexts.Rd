@@ -4,10 +4,18 @@
 \alias{transformContexts}
 \title{Simplify and normalize contexts}
 \usage{
-transformContexts(contexts = NULL, snv = NULL, indel = NULL,
-  sv = NULL, simplify.types = NULL, lsqnonneg.types = NULL,
-  rel.types = NULL, sig.profiles = list(snv = SNV_SIGNATURE_PROFILES,
-  indel = NULL, sv = SV_SIGNATURE_PROFILES), export.list = F)
+transformContexts(
+  contexts = NULL,
+  snv = NULL,
+  indel = NULL,
+  sv = NULL,
+  simplify.types = NULL,
+  lsqnonneg.types = NULL,
+  rel.types = NULL,
+  sig.profiles = list(snv = SNV_SIGNATURE_PROFILES, indel = NULL, sv =
+    SV_SIGNATURE_PROFILES),
+  export.list = F
+)
 }
 \arguments{
 \item{contexts}{A list containing data frames of snv, indel, and/or sv contexts. Alternatively,

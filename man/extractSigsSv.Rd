@@ -4,11 +4,19 @@
 \alias{extractSigsSv}
 \title{Extract structural variant signatures}
 \usage{
-extractSigsSv(vcf.file = NULL, df = NULL, output = "signatures",
-  sample.name = NULL, sv.caller = "gridss", half.tra.counts = F,
-  sv.len.cutoffs = if (output == "signatures") {     c(10^c(3:7), Inf) }
-  else {     c(0, 10^c(3:7), Inf) },
-  signature.profiles = SV_SIGNATURE_PROFILES, verbose = F, ...)
+extractSigsSv(
+  vcf.file = NULL,
+  df = NULL,
+  output = "signatures",
+  sample.name = NULL,
+  sv.caller = "gridss",
+  half.tra.counts = F,
+  sv.len.cutoffs = if (output == "signatures") {     c(10^c(3:7), Inf) } else {     c(0,
+    10^c(3:7), Inf) },
+  signature.profiles = SV_SIGNATURE_PROFILES,
+  verbose = F,
+  ...
+)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}

@@ -4,14 +4,21 @@
 \alias{extractSigsSnv}
 \title{Extract single nucleotide variant signatures}
 \usage{
-extractSigsSnv(vcf.file = NULL, bed = NULL, output = "signatures",
-  sample.name = NULL, ref.genome = DEFAULT_GENOME,
-  signature.profiles = SNV_SIGNATURE_PROFILES, verbose = F, ...)
+extractSigsSnv(
+  vcf.file = NULL,
+  df = NULL,
+  output = "signatures",
+  sample.name = NULL,
+  ref.genome = DEFAULT_GENOME,
+  signature.profiles = SNV_SIGNATURE_PROFILES,
+  verbose = F,
+  ...
+)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
-\item{bed}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
+\item{df}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
 
 \item{output}{Output the absolute signature contributions (default, 'signatures'), or the
 96-trinucleotide contexts ('contexts')}

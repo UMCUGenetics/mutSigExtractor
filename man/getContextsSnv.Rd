@@ -4,10 +4,10 @@
 \alias{getContextsSnv}
 \title{Extract trinucleotide contexts}
 \usage{
-getContextsSnv(bed, ref.genome = DEFAULT_GENOME, verbose = F)
+getContextsSnv(df, ref.genome = DEFAULT_GENOME, verbose = F)
 }
 \arguments{
-\item{bed}{A dataframe containing the columns: chrom, pos, ref, alt}
+\item{df}{A dataframe containing the columns: chrom, pos, ref, alt}
 
 \item{ref.genome}{A character naming the BSgenome reference genome. Default is
 "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
@@ -16,7 +16,7 @@ installed.}
 \item{verbose}{Print progress messages?}
 }
 \value{
-A dataframe in the same structure as a bed file
+A dataframe in the same structure as a df file
 }
 \description{
 Extract trinucleotide contexts

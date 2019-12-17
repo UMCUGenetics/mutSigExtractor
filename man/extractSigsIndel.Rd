@@ -4,14 +4,22 @@
 \alias{extractSigsIndel}
 \title{Extract indel signatures}
 \usage{
-extractSigsIndel(vcf.file = NULL, bed = NULL, sample.name = NULL,
-  ref.genome = DEFAULT_GENOME, indel.len.cap = 5, n.bases.mh.cap = 5,
-  get.other.indel.allele = F, verbose = F, ...)
+extractSigsIndel(
+  vcf.file = NULL,
+  df = NULL,
+  sample.name = NULL,
+  ref.genome = DEFAULT_GENOME,
+  indel.len.cap = 5,
+  n.bases.mh.cap = 5,
+  get.other.indel.allele = F,
+  verbose = F,
+  ...
+)
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
-\item{bed}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
+\item{df}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
 
 \item{sample.name}{If a character is provided, the header for the output matrix will be named to this. If none is
 provided, the basename of the vcf file will be used.}
@@ -52,10 +60,6 @@ stratified by the length of the indel.}
 \item{n.indel.lengths.l}{The length of the flanking sequence to return (measured in indel lengths)}
 
 \item{n.indel.lengths.r}{See n.indel.lengths.l}
-
-\item{indel.seq}{The indel sequence as a character}
-
-\item{flank.seq}{The flanking sequence as a character}
 
 \item{indel.seq}{The indel sequence as a character}
 
