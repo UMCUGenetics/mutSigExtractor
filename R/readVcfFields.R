@@ -14,7 +14,10 @@ readVcfFields <- function(vcf.file, fields=NULL){
 
    ## Remove all header lines, then read the vcf
    clean_lines <- sub('##.*','', readLines(vcf.file))
-   vcf <- read.delim(text=paste(clean_lines, collapse = "\n"), check.names=F, stringsAsFactors=F)
+   vcf <- read.delim(
+      text=paste(clean_lines, collapse = "\n"),
+      check.names=F, stringsAsFactors=F
+   )
 
    ## Remove '#' from header line
    colnames(vcf) <- sub('^#','',colnames(vcf))
@@ -22,11 +25,6 @@ readVcfFields <- function(vcf.file, fields=NULL){
    ## Select desired columns
    if(!is.null(fields)){
       vcf <- vcf[,fields,drop=F]
-   }
-
-   if(nrow(vcf)==0){
-      warning('VCF contains no rows. Returning NA')
-      stop(return(NA))
    }
 
    return(vcf)
