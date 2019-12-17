@@ -1,6 +1,6 @@
 #' Extract indel sequence, type and length
 #'
-#' @param bed A dataframe containing the columns: chrom, pos, ref, alt
+#' @param df A dataframe containing the columns: chrom, pos, ref, alt
 #' @param ref.genome A character naming the BSgenome reference genome. Default is
 #' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
 #' installed.
@@ -10,33 +10,33 @@
 #' will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).
 #' @param verbose Print progress messages?
 #'
-#' @return A dataframe in the same structure as a bed file
+#' @return A dataframe in the same structure as a df file
 #' @export
-getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.allele=F, verbose=F){
+getContextsIndel <- function(df, ref.genome=DEFAULT_GENOME, get.other.indel.allele=F, verbose=F){
 
-   bed_colnames <- c('chrom','pos','ref','alt')
-   if(!(identical(colnames(bed)[1:4], bed_colnames))){
-      warning("colnames(bed)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
-      colnames(bed)[1:4] <- bed_colnames
+   df_colnames <- c('chrom','pos','ref','alt')
+   if(!(identical(colnames(df)[1:4], df_colnames))){
+      warning("colnames(df)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
+      colnames(df)[1:4] <- df_colnames
    }
 
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   seqlevelsStyle(bed$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
+   seqlevelsStyle(df$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
 
    if(verbose){ message('Determining indel type...') }
    ## Calc sequence lengths
-   bed$ref_len <- nchar(bed$ref)
-   bed$alt_len <- nchar(bed$alt)
+   df$ref_len <- nchar(df$ref)
+   df$alt_len <- nchar(df$alt)
 
    ## Remove snvs
-   bed <- bed[!(bed$ref_len==1 & bed$alt_len==1),]
-   if(nrow(bed)==0){
+   df <- df[!(df$ref_len==1 & df$alt_len==1),]
+   if(nrow(df)==0){
       warning('No variants remained after subsetting for indels. Returning NA')
       return(NA)
    }
 
    ## Determine indel type
-   bed$indel_type <- with(bed,{
+   df$indel_type <- with(df,{
       unlist(Map(function(ref_len, alt_len){
          if(ref_len >= 2 & alt_len >= 2){
             if(ref_len == alt_len){ 'mnv_neutral' }
@@ -52,12 +52,12 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
 
    if(get.other.indel.allele==T){
       if(verbose){ message('Retrieving other indel allele...') }
-      bed_split <- lapply(
+      df_split <- lapply(
          list(del_type=c('del','mnv_del'),ins_type=c('ins','mnv_ins'),mnv_neutral='mnv_neutral'),
-         function(i){ bed[bed$indel_type %in% i, ] }
+         function(i){ df[df$indel_type %in% i, ] }
       )
 
-      if(nrow(bed_split$del_type)!=0){
+      if(nrow(df_split$del_type)!=0){
          ## Deletions
          ## ref:   'AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
          ## alt:  'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
@@ -67,18 +67,18 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
          ## 5' base relative to ref ->
          ##    alt column
          ##    ref sequence
-         bed_split$del_type$alt <- with(bed_split$del_type, {
+         df_split$del_type$alt <- with(df_split$del_type, {
             getSeq(
                x=eval(parse(text=ref.genome)),
                names=chrom, start=pos-1,end=pos-1,
                as.character=T
             )
          })
-         bed_split$del_type$ref <- with(bed_split$del_type, { paste0(alt, ref) })
-         bed_split$del_type$pos <- bed_split$del_type$pos-1
+         df_split$del_type$ref <- with(df_split$del_type, { paste0(alt, ref) })
+         df_split$del_type$pos <- df_split$del_type$pos-1
       }
 
-      if(nrow(bed_split$ins_type)!=0){
+      if(nrow(df_split$ins_type)!=0){
          ## Insertions
          ## ref:  ''
          ## alt:  'AGAGAGAGAGACAGAA'
@@ -89,32 +89,32 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
          ##    ref column
          ##    alt sequence
          ## Substract 1 from pos
-         bed_split$ins_type$ref <- with(bed_split$ins_type, {
+         df_split$ins_type$ref <- with(df_split$ins_type, {
             getSeq(
                x=eval(parse(text=ref.genome)),
                names=chrom, start=pos-1,end=pos-1,
                as.character=T
             )
          })
-         bed_split$ins_type$alt <- with(bed_split$ins_type, { paste0(ref,alt) })
-         bed_split$ins_type$pos <- bed_split$ins_type$pos-1
+         df_split$ins_type$alt <- with(df_split$ins_type, { paste0(ref,alt) })
+         df_split$ins_type$pos <- df_split$ins_type$pos-1
       }
 
-      ## Unsplit bed
-      bed <- do.call(rbind, bed_split)
-      rownames(bed) <- NULL
+      ## Unsplit df
+      df <- do.call(rbind, df_split)
+      rownames(df) <- NULL
 
       ## Recalculate ref/alt length
-      bed$ref_len <- nchar(bed$ref)
-      bed$alt_len <- nchar(bed$alt)
+      df$ref_len <- nchar(df$ref)
+      df$alt_len <- nchar(df$alt)
    }
 
    if(verbose){ message('Determining indel length and sequence...') }
    ## Determine indel length
-   bed$indel_len <- abs(bed$alt_len-bed$ref_len)
+   df$indel_len <- abs(df$alt_len-df$ref_len)
 
    ## Determine indel seq
-   bed$indel_seq <- with(bed,{
+   df$indel_seq <- with(df,{
       unlist(Map(function(ref,alt,indel_type,indel_len){
          indel_start_pos <- 2
          if(indel_type %in% c('del','mnv_del')){ ## dels
@@ -129,7 +129,7 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
 
    ## Output
    if(verbose){ message('Returning indel characteristics...') }
-   out <- bed[bed$indel_type %in% c('ins','del'),]
+   out <- df[df$indel_type %in% c('ins','del'),]
    out <- out[,c('chrom','pos','ref','alt','indel_len','indel_type','indel_seq')]
    return(out)
 }
@@ -146,7 +146,7 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
 #' stratified by the length of the indel.
 #'
 #' @param vcf.file Path to the vcf file
-#' @param bed A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
+#' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
 #' @param sample.name If a character is provided, the header for the output matrix will be named to this. If none is
 #' provided, the basename of the vcf file will be used.
 #' @param ref.genome A character naming the BSgenome reference genome. Default is "BSgenome.Hsapiens.UCSC.hg19". If another
@@ -165,15 +165,15 @@ getContextsIndel <- function(bed, ref.genome=DEFAULT_GENOME, get.other.indel.all
 #' @return A 1-column matrix
 #' @export
 extractSigsIndel <- function(
-   vcf.file=NULL, bed=NULL, sample.name=NULL, ref.genome=DEFAULT_GENOME,
+   vcf.file=NULL, df=NULL, sample.name=NULL, ref.genome=DEFAULT_GENOME,
    indel.len.cap=5, n.bases.mh.cap=5, get.other.indel.allele=F, verbose=F, ...
 ){
 
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      bed <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
+      df <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
    }
-   df <- getContextsIndel(bed, ref.genome=ref.genome, verbose=verbose, get.other.indel.allele=get.other.indel.allele)
+   df <- getContextsIndel(df, ref.genome=ref.genome, verbose=verbose, get.other.indel.allele=get.other.indel.allele)
 
    if(verbose){ message('Initializing indel signature output vector...') }
    indel_sig_names <- c(

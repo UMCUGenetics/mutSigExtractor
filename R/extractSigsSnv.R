@@ -1,42 +1,42 @@
 #' Extract trinucleotide contexts
 #'
-#' @param bed A dataframe containing the columns: chrom, pos, ref, alt
+#' @param df A dataframe containing the columns: chrom, pos, ref, alt
 #' @param ref.genome A character naming the BSgenome reference genome. Default is
 #' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
 #' installed.
 #' @param verbose Print progress messages?
 #'
-#' @return A dataframe in the same structure as a bed file
+#' @return A dataframe in the same structure as a df file
 #' @export
-getContextsSnv <- function(bed, ref.genome=DEFAULT_GENOME, verbose=F){
+getContextsSnv <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 
-   bed_colnames <- c('chrom','pos','ref','alt')
-   if(!(identical(colnames(bed)[1:4], bed_colnames))){
-      warning("colnames(bed)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
-      colnames(bed)[1:4] <- bed_colnames
+   df_colnames <- c('chrom','pos','ref','alt')
+   if(!(identical(colnames(df)[1:4], df_colnames))){
+      warning("colnames(df)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
+      colnames(df)[1:4] <- df_colnames
    }
 
    if(verbose){ message('Removing rows with multiple ALT sequences...') }
-   bed <- bed[!grepl(',',bed$alt),]
+   df <- df[!grepl(',',df$alt),]
 
    if(verbose){ message('Subsetting for SNVs...') }
-   bed <- bed[nchar(bed$ref)==1 & nchar(bed$alt)==1,]
-   if(nrow(bed)==0){
+   df <- df[nchar(df$ref)==1 & nchar(df$alt)==1,]
+   if(nrow(df)==0){
       warning('No variants remained after subsetting for SNVs. Returning NA')
       return(NA)
    }
 
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   seqlevelsStyle(bed$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
+   seqlevelsStyle(df$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
 
    if(verbose){ message('Returning SNV trinucleotide contexts...') }
    out <- data.frame(
-      substitution = paste0(bed$ref,'>',bed$alt),
+      substitution = paste0(df$ref,'>',df$alt),
       tri_context = getSeq(
          x = eval(parse(text=ref.genome)),
-         names = bed$chrom,
-         start = bed$pos - 1,
-         end = bed$pos + 1,
+         names = df$chrom,
+         start = df$pos - 1,
+         end = df$pos + 1,
          as.character=T
       ),
       stringsAsFactors=F
@@ -57,7 +57,7 @@ getContextsSnv <- function(bed, ref.genome=DEFAULT_GENOME, verbose=F){
 #' which are derived from the 96-trinucleotide mutation contexts.
 #'
 #' @param vcf.file Path to the vcf file
-#' @param bed A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
+#' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
 #' @param output Output the absolute signature contributions (default, 'signatures'), or the
 #' 96-trinucleotide contexts ('contexts')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
@@ -72,16 +72,16 @@ getContextsSnv <- function(bed, ref.genome=DEFAULT_GENOME, verbose=F){
 #' @return A 1-column matrix
 #' @export
 extractSigsSnv <- function(
-   vcf.file=NULL, bed=NULL, output='signatures', sample.name=NULL,
+   vcf.file=NULL, df=NULL, output='signatures', sample.name=NULL,
    ref.genome=DEFAULT_GENOME, signature.profiles=SNV_SIGNATURE_PROFILES,
    verbose=F, ...
 ){
 
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      bed <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
+      df <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
    }
-   df <- getContextsSnv(bed, ref.genome=ref.genome, verbose=verbose)
+   df <- getContextsSnv(df, ref.genome=ref.genome, verbose=verbose)
 
    if(verbose){ message('Initializing SNV signature output vector...') }
    context_counts <- structure(
