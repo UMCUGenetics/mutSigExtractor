@@ -25,151 +25,146 @@ variantsFromVcf <- function(
 
    if(verbose){ message('Reading in vcf file...') }
 
-   vcf <- readVcf(vcf.file)
-
-   ## Deal with empty vcfs
-   if( identical(width(vcf),integer(0)) ){
-      warning('VCF contains no rows. Returning NA')
-      stop(return(NA))
+   vcf_fields <- c('CHROM','POS','REF','ALT','FILTER')
+   if(mode=='sv'){
+      if(sv.caller=='gridss'){
+         vcf_fields <- c(vcf_fields, 'ID')
+      } else if(sv.caller=='manta'){
+         vcf_fields <- c(vcf_fields, 'INFO')
+      }
    }
 
+   vcf <- readVcfFields(vcf.file, vcf_fields)
+   colnames(vcf) <- tolower(colnames(vcf))
+
+   if(nrow(vcf)==0){
+      if(verbose){ warning('VCF contains no rows. Returning NA') }
+      return(NA)
+   }
+
+   ## Set chromosome names to the same used in the supplied ref genome
+   vcf$chrom <- as.character(vcf$chrom)
    if(!is.null(ref.genome)){
-      ref_genome <- eval(parse(text = ref.genome))
+      ref_genome <- eval(parse(text=ref.genome))
       ref_organism <- GenomeInfoDb::organism(ref_genome)
-      seqlevelsStyle(vcf) <- seqlevelsStyle(ref_genome)
+      seqlevelsStyle(vcf$chrom) <- seqlevelsStyle(ref_genome)
    }
 
-   ## Remove non autosomal chromosomes?
+   ## Keep certain chromosome types
    if(chrom.group != 'all'){
       if(is.null(ref_genome)){ stop('chromosome.group was specified but no reference genome was provided') }
 
       genome_chrom_group_names <- extractSeqlevelsByGroup(
-         species = ref_organism,
-         style = seqlevelsStyle(ref_genome),
-         group = chrom.group)
-      target_chrom_group_names <- intersect(genome_chrom_group_names, seqlevels(vcf))
-
-      vcf <- keepSeqlevels(vcf, target_chrom_group_names, pruning.mode = "coarse")
+         species=ref_organism,
+         style=seqlevelsStyle(ref_genome),
+         group=chrom.group
+      )
+      target_chrom_group_names <- intersect(genome_chrom_group_names, vcf$chrom)
+      vcf$chrom <- vcf$chrom[vcf$chrom %in% target_chrom_group_names]
    }
 
    ## Filter vcf
    if(!is.na(vcf.filter)){
-      if(verbose){ message('Only keeping variants where FILTER %in% c(', paste(vcf.filter,collapse=', '), ')' ) }
-      vcf <- vcf[which(rowRanges(vcf)$FILTER %in% vcf.filter)]
+      if(verbose){ message('Only keeping variants where FILTER is ', paste(vcf.filter,collapse=', ')) }
+      vcf <- vcf[vcf$filter %in% vcf.filter,]
    }
 
-   if( identical(width(vcf),integer(0)) ){
-      warning('After filtering, VCF contains no rows. Returning NA')
-      stop(return(NA))
+   if(nrow(vcf)==0){
+      if(verbose){ warning('After filtering, VCF contains no rows. Returning NA') }
+      return(NA)
    }
-
 
    #========= SNV/Indels =========#
    if(mode=='snv_indel'){
-      vcf_rr <- rowRanges(vcf)
 
       ## Unselect rows with multiple ALT sequences
-      if(!identical(which(lengths(vcf_rr$ALT) > 1), integer(0))){
-         if(verbose){ message('Removing rows with multiple ALT sequences...') }
-         vcf_rr <- vcf_rr[which(lengths(vcf_rr$ALT) == 1)]
-      }
+      if(verbose){ message('Removing rows with multiple ALT sequences...') }
+      vcf <- vcf[!grepl(',',vcf$alt),]
 
-      ## Get main columns
-      bed <- data.frame(
-         chrom=as.character(seqnames(vcf_rr)),
-         pos=start(vcf_rr),
-         ref=as.character(vcf_rr$REF),
-         alt=as.character(unlist(vcf_rr$ALT)),
-         stringsAsFactors=F
-      )
+      ## Post-processing
+      vcf$filter <- NULL
 
-      return(bed)
+      return(vcf)
    }
 
    #========= SV =========#
-   if (mode=='sv'){
+   if(!(sv.caller %in% c('manta','gridss'))){
+      stop("Please specify valid SV caller: 'manta','gridss'")
+   }
 
-      if(!(sv.caller %in% c('manta','gridss'))){
-         stop("Please specify valid SV caller: 'manta','gridss'")
-      }
+   if(sv.caller=='manta'){
 
-      if(sv.caller=='manta'){
-         if(verbose){ message('Returning SV length and type...') }
-         sv_len <- unlist(lapply(info(vcf)$SVLEN, function(i){
-            if(length(i) == 0){ i <- NA }
-            else { i }
-         }))
-         sv_len <- abs(sv_len) ## Convert negative sv_len from DEL to positive
+      if(verbose){ message('Returning SV length and type...') }
+      vcf_info <- strsplit(vcf$info,';')
 
-         out <- data.frame(
-            sv_type = info(vcf)$SVTYPE,
-            sv_len = sv_len
-         )
-         return(out)
-      }
+      sv_type <- sapply(vcf_info,`[`,2) ## Select the 2nd object from each INFO entry
+      sv_type <- gsub('SVTYPE=','',sv_type) ## Remove the 'SVTYPE=' prefix
 
-      if(sv.caller=='gridss'){
-         if(verbose){ message('Retrieving sense partners and unpartnered SVs...') }
+      sv_len <- sapply(vcf_info,`[`,1) ## Select the 1st object from each INFO entry
+      sv_len <- gsub('SVLEN=','',sv_len) ## Remove the 'SVLEN=' prefix
+      sv_len <- abs(as.integer(sv_len)) ## Convert the character vector to an integer vector; ## Convert negative sv_len from DEL to positive
 
-         ## ID nomenclature:
-         ## ends with o: 5' breakend
-         ## ends with h: 3' breakend
-         ## ends with b: unpaired breakend
-         ## 'o' breakends have positive SV length
+      out <- data.frame(sv_type, sv_len, stringsAsFactors=F)
+      return(out)
+   }
 
-         vcf_no_partners <- vcf[grepl('o$', names(vcf)) | grepl('b$', names(vcf))]
+   if(sv.caller=='gridss'){
 
-         df <- data.frame(
-            id = names(vcf_no_partners),
-            partner_type = unlist(regmatches(names(vcf_no_partners), gregexpr('[ob]$', names(vcf_no_partners)))),
-            chrom_ref = gsub('chr','',as.character(seqnames(vcf_no_partners))),
-            pos_ref = start(vcf_no_partners),
-            seq_ref = as.character(rowRanges(vcf_no_partners)$REF),
-            alt = as.character(rowRanges(vcf_no_partners)$ALT),
-            stringsAsFactors = F
-         )
+      ## ID nomenclature:
+      ## ends with o: 5' breakend
+      ## ends with h: 3' breakend
+      ## ends with b: unpaired breakend
+      ## 'o' breakends have positive SV length
 
-         if(verbose){ message('Formatting ALT and calculating preliminary SV length...') }
-         alt_coord <- regmatches(df$alt, gregexpr('\\d|\\w+:\\d+', df$alt))
-         alt_coord <- as.data.frame(do.call(rbind, lapply(alt_coord, function(i){
-            if(length(i) == 0){ c(NA,NA) }
-            else { unlist(strsplit(i, ':')) }
-         })))
-         colnames(alt_coord) <- c('chrom_alt','pos_alt')
+      if(verbose){ message('Keeping one breakend...') }
+      df <- vcf[grepl('o$', vcf$id) | grepl('b$', vcf$id),]
 
-         df <- cbind(df, alt_coord)
-         df$pos_alt <- as.numeric(as.character(df$pos_alt))
+      if(verbose){ message('Determining partner type...') }
+      df$partner_type <- unlist(regmatches(df$id, gregexpr('[ob]$', df$id)))
 
-         df$sv_len_pre <- df$pos_alt - df$pos_ref
+      df$chrom_ref <- gsub('chr','',df$chrom)
+      df$pos_ref <- df$pos
 
-         ## Decision tree
-         if(verbose){ message('Determining and returning SV length and type...') }
-         out <- with(df,{
-            do.call(rbind,Map(function(partner_type, chrom_ref, chrom_alt, alt, sv_len_pre){
-               if(partner_type == 'b'){
-                  sv_type <- 'SGL'
-               } else if(chrom_ref != chrom_alt){
-                  sv_type <- 'TRA'
-               } else if(sv_len_pre == 1){
-                  sv_type <- 'INS'
-               } else if(grepl('\\w+\\[.+\\[', alt)){
-                  sv_type <- 'DEL'
-               } else if(grepl('\\].+\\]\\w+', alt)){
-                  sv_type <- 'DUP'
-               } else if(grepl('\\w+\\].+\\]', alt) | grepl('\\[.+\\[\\w+', alt) ){
-                  sv_type <- 'INV'
-               } else {
-                  sv_type <- NA
-               }
+      if(verbose){ message('Formatting ALT and calculating preliminary SV length...') }
+      alt_coord <- regmatches(df$alt, gregexpr('\\d|\\w+:\\d+', df$alt))
+      alt_coord <- as.data.frame(do.call(rbind, lapply(alt_coord, function(i){
+         if(length(i) == 0){ c(NA,NA) }
+         else { unlist(strsplit(i, ':')) }
+      })))
+      colnames(alt_coord) <- c('chrom_alt','pos_alt')
 
-               if(sv_type %in% c('SGL','TRA')){ sv_len <- NA }
-               else{ sv_len <- sv_len_pre }
+      df <- cbind(df, alt_coord)
+      df$pos_alt <- as.numeric(as.character(df$pos_alt))
 
-               return(data.frame(sv_type, sv_len, stringsAsFactors = F))
-            }, partner_type, chrom_ref, chrom_alt, alt, sv_len_pre, USE.NAMES = F))
-         })
+      df$sv_len_pre <- df$pos_alt - df$pos_ref
 
-         return(out)
-      }
+      ## Decision tree
+      if(verbose){ message('Determining and returning SV length and type...') }
+      out <- with(df,{
+         do.call(rbind,Map(function(partner_type, chrom_ref, chrom_alt, alt, sv_len_pre){
+            if(partner_type == 'b'){
+               sv_type <- 'SGL'
+            } else if(chrom_ref != chrom_alt){
+               sv_type <- 'TRA'
+            } else if(sv_len_pre == 1){
+               sv_type <- 'INS'
+            } else if(grepl('\\w+\\[.+\\[', alt)){
+               sv_type <- 'DEL'
+            } else if(grepl('\\].+\\]\\w+', alt)){
+               sv_type <- 'DUP'
+            } else if(grepl('\\w+\\].+\\]', alt) | grepl('\\[.+\\[\\w+', alt) ){
+               sv_type <- 'INV'
+            } else {
+               sv_type <- NA
+            }
+
+            if(sv_type %in% c('SGL','TRA')){ sv_len <- NA }
+            else{ sv_len <- sv_len_pre }
+
+            return(data.frame(sv_type, sv_len, stringsAsFactors = F))
+         }, partner_type, chrom_ref, chrom_alt, alt, sv_len_pre, USE.NAMES = F))
+      })
+
+      return(out)
    }
 }
