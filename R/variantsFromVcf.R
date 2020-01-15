@@ -21,6 +21,12 @@ variantsFromVcf <- function(
    vcf.filter=NA, verbose=F
 ){
 
+   # mode='sv'
+   # sv.caller='manta'
+   # vcf.filter='PASS'
+   # verbose=T
+   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/CHORD/example/vcf/PD3905_sv.vcf.gz'
+
    if(!(mode %in% c('snv_indel','sv'))){ stop("Mode must be 'snv_indel', or 'sv'") }
 
    if(verbose){ message('Reading in vcf file...') }
@@ -95,16 +101,12 @@ variantsFromVcf <- function(
    if(sv.caller=='manta'){
 
       if(verbose){ message('Returning SV length and type...') }
-      vcf_info <- strsplit(vcf$info,';')
 
-      sv_type <- sapply(vcf_info,`[`,2) ## Select the 2nd object from each INFO entry
-      sv_type <- gsub('SVTYPE=','',sv_type) ## Remove the 'SVTYPE=' prefix
+      out <- getInfoValues(vcf$info,c('SVTYPE','SVLEN'))
+      colnames(out) <- c('sv_type','sv_len')
+      out$sv_len <- as.numeric(out$sv_len)
+      out$sv_len[out$sv_type=='TRA'] <- NA
 
-      sv_len <- sapply(vcf_info,`[`,1) ## Select the 1st object from each INFO entry
-      sv_len <- gsub('SVLEN=','',sv_len) ## Remove the 'SVLEN=' prefix
-      sv_len <- abs(as.integer(sv_len)) ## Convert the character vector to an integer vector; ## Convert negative sv_len from DEL to positive
-
-      out <- data.frame(sv_type, sv_len, stringsAsFactors=F)
       return(out)
    }
 
