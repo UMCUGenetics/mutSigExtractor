@@ -2,7 +2,7 @@
 % Please edit documentation in R/readVcfFields.R
 \name{readVcfFields}
 \alias{readVcfFields}
-\title{A basic vcf reader}
+\title{Read vcf into R as data frame}
 \usage{
 readVcfFields(vcf.file, fields = NULL)
 }
@@ -15,7 +15,7 @@ readVcfFields(vcf.file, fields = NULL)
 A dataframe
 }
 \description{
-A basic vcf reader
+Read vcf into R as data frame
 }
 \examples{
 readVcfFields('/path/to/vcf', fields=c('CHROM','POS','REF','ALT'))
