@@ -19,15 +19,15 @@ getContextsSnv <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
    if(verbose){ message('Removing rows with multiple ALT sequences...') }
    df <- df[!grepl(',',df$alt),]
 
+   if(verbose){ message('Converting chrom name style to style in ref.genome...') }
+   seqlevelsStyle(df$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
+
    if(verbose){ message('Subsetting for SNVs...') }
    df <- df[nchar(df$ref)==1 & nchar(df$alt)==1,]
    if(nrow(df)==0){
       warning('No variants remained after subsetting for SNVs. Returning NA')
       return(NA)
    }
-
-   if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   seqlevelsStyle(df$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
 
    if(verbose){ message('Returning SNV trinucleotide contexts...') }
    out <- data.frame(

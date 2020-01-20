@@ -20,6 +20,10 @@ getContextsIndel <- function(df, ref.genome=DEFAULT_GENOME, get.other.indel.alle
       colnames(df)[1:4] <- df_colnames
    }
 
+   ## Unselect rows with multiple ALT sequences
+   if(verbose){ message('Removing rows with multiple ALT sequences...') }
+   vcf <- vcf[!grepl(',',vcf$alt),]
+
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
    seqlevelsStyle(df$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
 

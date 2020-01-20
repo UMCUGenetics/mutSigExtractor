@@ -20,12 +20,11 @@ variantsFromVcf <- function(
    vcf.file, mode=NULL, sv.caller='gridss', ref.genome=DEFAULT_GENOME, keep.chroms=NULL,
    vcf.filter=NA, verbose=F
 ){
-
    # mode='sv'
    # sv.caller='manta'
    # vcf.filter='PASS'
    # verbose=T
-   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/CHORD/example/vcf/PD3905_sv.vcf.gz'
+   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/CHORD/example/vcf/PD3905_snv_indel.vcf.gz'
 
    if(!(mode %in% c('snv_indel','sv'))){ stop("Mode must be 'snv_indel', or 'sv'") }
 
@@ -78,14 +77,6 @@ variantsFromVcf <- function(
 
    #========= SNV/Indels =========#
    if(mode=='snv_indel'){
-
-      ## Unselect rows with multiple ALT sequences
-      if(verbose){ message('Removing rows with multiple ALT sequences...') }
-      vcf <- vcf[!grepl(',',vcf$alt),]
-
-      ## Post-processing
-      vcf$filter <- NULL
-
       return(vcf)
    }
 
