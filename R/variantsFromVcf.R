@@ -8,8 +8,8 @@
 #' @param ref.genome A character naming the BSgenome reference genome. Default is
 #' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
 #' installed.
-#' @param chrom.group chrom.group can be 'auto' for autosomes, 'sex' for sex chromosomes/allosomes,
-#' 'circular' for circular chromosomes. The default is 'all' which returns all the chromosomes.
+#' @param keep.chroms A character vector specifying which chromosomes to keep. To keep autosomal and
+#' sex chromosomes for example use: keep.chroms=paste0('chr',c(1:22,'X','Y'))
 #' @param vcf.filter A character or character vector to specifying which variants to keep,
 #' corresponding to the values in the vcf FILTER column
 #' @param verbose Print progress messages?
@@ -17,7 +17,7 @@
 #' @return A data frame containing the relevant variant info for extracting the indicated signature type
 #' @export
 variantsFromVcf <- function(
-   vcf.file, mode=NULL, sv.caller='gridss', ref.genome=DEFAULT_GENOME, chrom.group='all',
+   vcf.file, mode=NULL, sv.caller='gridss', ref.genome=DEFAULT_GENOME, keep.chroms=NULL,
    vcf.filter=NA, verbose=F
 ){
 
@@ -51,22 +51,18 @@ variantsFromVcf <- function(
    ## Set chromosome names to the same used in the supplied ref genome
    vcf$chrom <- as.character(vcf$chrom)
    if(!is.null(ref.genome)){
+      if(verbose){ 'Converting chrom name style to style in ref.genome...' }
       ref_genome <- eval(parse(text=ref.genome))
       ref_organism <- GenomeInfoDb::organism(ref_genome)
       seqlevelsStyle(vcf$chrom) <- seqlevelsStyle(ref_genome)
    }
 
    ## Keep certain chromosome types
-   if(chrom.group != 'all'){
-      if(is.null(ref_genome)){ stop('chromosome.group was specified but no reference genome was provided') }
-
-      genome_chrom_group_names <- extractSeqlevelsByGroup(
-         species=ref_organism,
-         style=seqlevelsStyle(ref_genome),
-         group=chrom.group
-      )
-      target_chrom_group_names <- intersect(genome_chrom_group_names, vcf$chrom)
-      vcf$chrom <- vcf$chrom[vcf$chrom %in% target_chrom_group_names]
+   if(!is.null(keep.chroms)){
+      if(is.null(ref.genome)){ stop('keep.chroms was specified but no reference genome was provided') }
+      if(verbose){ 'Only keeping chromosomes as indicated in keep.chroms...' }
+      seqlevelsStyle(keep.chroms) <- seqlevelsStyle(ref_genome) ## Force chromosome name style to that in ref genome
+      vcf <- vcf[vcf$chrom %in% keep.chroms,]
    }
 
    ## Filter vcf

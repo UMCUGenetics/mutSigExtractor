@@ -9,7 +9,7 @@ variantsFromVcf(
   mode = NULL,
   sv.caller = "gridss",
   ref.genome = DEFAULT_GENOME,
-  chrom.group = "all",
+  keep.chroms = NULL,
   vcf.filter = NA,
   verbose = F
 )
@@ -27,8 +27,8 @@ callers will need to be parsed separately.}
 "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
 installed.}
 
-\item{chrom.group}{chrom.group can be 'auto' for autosomes, 'sex' for sex chromosomes/allosomes,
-'circular' for circular chromosomes. The default is 'all' which returns all the chromosomes.}
+\item{keep.chroms}{A character vector specifying which chromosomes to keep. To keep autosomal and
+sex chromosomes for example use: keep.chroms=paste0('chr',c(1:22,'X','Y'))}
 
 \item{vcf.filter}{A character or character vector to specifying which variants to keep,
 corresponding to the values in the vcf FILTER column}
