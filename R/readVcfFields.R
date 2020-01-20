@@ -12,10 +12,19 @@
 
 readVcfFields <- function(vcf.file, fields=NULL){
 
-   ## Remove all header lines, then read the vcf
-   clean_lines <- sub('##.*','', readLines(vcf.file))
+   ## Scan for the header line
+   con  <- file(vcf.file, open = "r")
+   line_num <- 0
+   while(length(line <- readLines(con, n=1, warn=F)) > 0) {
+      line_num <- line_num + 1
+      #if(grepl('^#CHROM',line)){ print(line) }
+      #if(line_num==100){ break }
+      if(!grepl('^##',line)){ break }
+   }
+   close(con)
+
    vcf <- read.delim(
-      text=paste(clean_lines, collapse = "\n"),
+      vcf.file, skip=line_num-1,
       check.names=F, stringsAsFactors=F
    )
 
@@ -29,6 +38,8 @@ readVcfFields <- function(vcf.file, fields=NULL){
 
    return(vcf)
 }
+
+
 
 ####################################################################################################
 #' Get values from INFO field
