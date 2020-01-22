@@ -83,6 +83,21 @@ extractSigsSnv <- function(
    }
    df <- getContextsSnv(df, ref.genome=ref.genome, verbose=verbose)
 
+   ## Check for weird nucleotides
+   which_weird_nt <- sort(unique(c(
+      grep('[^ACTG>]',df$substitution),
+      grep('[^ACTG]',df$tri_context)
+   )))
+
+   if(length(which_weird_nt)>0){
+      warning(
+         length(which_weird_nt),
+         ' variants containing nucleotides other than A,T,C,G were removed (rows: ',
+         paste(which_weird_nt, collapse=', '), ')'
+      )
+      df <- df[-which_weird_nt,]
+   }
+
    if(verbose){ message('Initializing SNV signature output vector...') }
    context_counts <- structure(
       rep(0, length(SUBS_CONTEXTS_96)),
