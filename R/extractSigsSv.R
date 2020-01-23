@@ -38,10 +38,10 @@ extractSigsSv <- function(
 ){
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, mode='sv', sv.caller=sv.caller, verbose=verbose, ...)
-   } else if(!is.null(df)){
+   } else if(is.data.frame(df)){
       colnames(df) <- c('sv_type','sv_len')
       half.tra.counts <- F ## If providing dataframe as input default to 'manta'.
-   } else {
+   } else if(!is.na(df)) {
       stop('Please specify either vcf.file or df as input')
    }
 
