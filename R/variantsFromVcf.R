@@ -68,6 +68,7 @@ variantsFromVcf <- function(
    if(!is.na(vcf.filter)){
       if(verbose){ message('Only keeping variants where FILTER is ', paste(vcf.filter,collapse=', ')) }
       vcf <- vcf[vcf$filter %in% vcf.filter,]
+      vcf$filter <- NULL
    }
 
    if(nrow(vcf)==0){
