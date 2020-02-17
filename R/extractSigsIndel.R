@@ -8,11 +8,17 @@
 #' the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
 #' allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
 #' will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).
+#' @param keep.indel.types A character vector of indel types to keep. Defaults to 'del' and 'ins' to
+#' filter out MNVs (variants where REF and ALT length >= 2). MNV names are: 'mnv_neutral'
+#' (REF lenth == ALT length), 'mnv_del' (REF length > ALT length), or 'mnv_ins' (REF length < ALT length).
 #' @param verbose Print progress messages?
 #'
-#' @return A dataframe in the same structure as a df file
+#' @return A dataframe in the same structure as a bed file with an extra column stating the context
+#' of each variant
 #' @export
-getContextsIndel <- function(df, ref.genome=DEFAULT_GENOME, get.other.indel.allele=F, verbose=F){
+getContextsIndel <- function(
+   df, ref.genome=DEFAULT_GENOME, get.other.indel.allele=F, keep.indel.types=c('del','ins'), verbose=F
+){
 
    df_colnames <- c('chrom','pos','ref','alt')
    if(!(identical(colnames(df)[1:4], df_colnames))){
@@ -133,7 +139,7 @@ getContextsIndel <- function(df, ref.genome=DEFAULT_GENOME, get.other.indel.alle
 
    ## Output
    if(verbose){ message('Returning indel characteristics...') }
-   out <- df[df$indel_type %in% c('ins','del'),]
+   out <- df[df$indel_type %in% keep.indel.types,]
    out <- out[,c('chrom','pos','ref','alt','indel_len','indel_type','indel_seq')]
    return(out)
 }
@@ -166,7 +172,7 @@ getContextsIndel <- function(df, ref.genome=DEFAULT_GENOME, get.other.indel.alle
 #' @param verbose Print progress messages?
 #' @param ... Other arguments that can be passed to variantsFromVcf()
 #'
-#' @return A 1-column matrix
+#' @return A 1-column matrix containing the context counts or signature contributions
 #' @export
 extractSigsIndel <- function(
    vcf.file=NULL, df=NULL, sample.name=NULL, ref.genome=DEFAULT_GENOME,

@@ -42,7 +42,7 @@ the mutation contexts and the columns are  the mutational signatures.}
 \item{verbose}{Print progress messages?}
 }
 \value{
-A 1-column matrix
+A 1-column matrix containing the context counts or signature contributions
 }
 \description{
 Will return a 1-column matrix containing: (if output = 'signatures') the absolute

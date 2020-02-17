@@ -8,6 +8,7 @@ getContextsIndel(
   df,
   ref.genome = DEFAULT_GENOME,
   get.other.indel.allele = F,
+  keep.indel.types = c("del", "ins"),
   verbose = F
 )
 }
@@ -23,10 +24,15 @@ the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, 
 allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
 will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).}
 
+\item{keep.indel.types}{A character vector of indel types to keep. Defaults to 'del' and 'ins' to
+filter out MNVs (variants where REF and ALT length >= 2). MNV names are: 'mnv_neutral'
+(REF lenth == ALT length), 'mnv_del' (REF length > ALT length), or 'mnv_ins' (REF length < ALT length).}
+
 \item{verbose}{Print progress messages?}
 }
 \value{
-A dataframe in the same structure as a df file
+A dataframe in the same structure as a bed file with an extra column stating the context
+of each variant
 }
 \description{
 Extract indel sequence, type and length

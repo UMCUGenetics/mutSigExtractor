@@ -10,7 +10,7 @@ extractSigsSnv(
   output = "signatures",
   sample.name = NULL,
   ref.genome = DEFAULT_GENOME,
-  signature.profiles = SNV_SIGNATURE_PROFILES,
+  signature.profiles = SNV_SIGNATURE_PROFILES_V2,
   verbose = F,
   ...
 )
@@ -36,7 +36,7 @@ the mutation contexts and the columns are  the mutational signatures.}
 \item{verbose}{Print progress messages?}
 }
 \value{
-A 1-column matrix
+A 1-column matrix containing the context counts or signature contributions
 }
 \description{
 Will output a 1-column matrix containing: (if output = 'signatures') the absolute

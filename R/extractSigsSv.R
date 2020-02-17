@@ -26,7 +26,7 @@
 #' the mutation contexts and the columns are  the mutational signatures.
 #' @param verbose Print progress messages?
 #'
-#' @return A 1-column matrix
+#' @return A 1-column matrix containing the context counts or signature contributions
 #' @export
 
 extractSigsSv <- function(

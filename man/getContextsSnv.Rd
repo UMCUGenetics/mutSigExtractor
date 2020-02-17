@@ -16,7 +16,8 @@ installed.}
 \item{verbose}{Print progress messages?}
 }
 \value{
-A dataframe in the same structure as a df file
+A dataframe in the same structure as a bed file with an extra column stating the context
+of each variant
 }
 \description{
 Extract trinucleotide contexts

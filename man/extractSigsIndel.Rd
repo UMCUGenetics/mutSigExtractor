@@ -66,7 +66,7 @@ stratified by the length of the indel.}
 \item{flank.seq}{The flanking sequence as a character}
 }
 \value{
-A 1-column matrix
+A 1-column matrix containing the context counts or signature contributions
 
 A vector of the left flank start/end position and right flank start/end position
 Calculate the number of copies of the indel sequence are present in the flank sequence

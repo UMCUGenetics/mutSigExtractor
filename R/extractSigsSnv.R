@@ -6,7 +6,8 @@
 #' installed.
 #' @param verbose Print progress messages?
 #'
-#' @return A dataframe in the same structure as a df file
+#' @return A dataframe in the same structure as a bed file with an extra column stating the context
+#' of each variant
 #' @export
 getContextsSnv <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 
@@ -69,11 +70,11 @@ getContextsSnv <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 #' the mutation contexts and the columns are  the mutational signatures.
 #' @param verbose Print progress messages?
 #'
-#' @return A 1-column matrix
+#' @return A 1-column matrix containing the context counts or signature contributions
 #' @export
 extractSigsSnv <- function(
    vcf.file=NULL, df=NULL, output='signatures', sample.name=NULL,
-   ref.genome=DEFAULT_GENOME, signature.profiles=SNV_SIGNATURE_PROFILES,
+   ref.genome=DEFAULT_GENOME, signature.profiles=SNV_SIGNATURE_PROFILES_V2,
    verbose=F, ...
 ){
 
@@ -96,6 +97,10 @@ extractSigsSnv <- function(
          paste(which_weird_nt, collapse=', '), ')'
       )
       df <- df[-which_weird_nt,]
+      if(nrow(df)==0){
+         warning('No variants remained after removing weird nucleotides. Returning NA')
+         return(NA)
+      }
    }
 
    if(verbose){ message('Initializing SNV signature output vector...') }
