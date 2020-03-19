@@ -53,7 +53,10 @@ getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 
    ## Get reverse complement (from lookup table) where applicable
    df$index <- 1:nrow(df) ## Create index to maintain original row order
-   df_split <- split(df, df$context %in% DBS_TYPES$context)
+   df_split <- list(
+      'TRUE'=df[df$context %in% DBS_TYPES$context,],
+      'FALSE'=df[!(df$context %in% DBS_TYPES$context),] ## Needs reverse complementing
+   )
 
    df_split[['FALSE']] <- within(df_split[['FALSE']],{
       context <- DBS_TYPES$context[ match(context, DBS_TYPES$context_rev_comp) ]
@@ -98,6 +101,7 @@ extractSigsDbs <- function(
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
+      #variants <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS')
    }
    df <- getContextsDbs(df, ref.genome=ref.genome, verbose=verbose)
 
