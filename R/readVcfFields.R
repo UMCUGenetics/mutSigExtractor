@@ -25,8 +25,10 @@ readVcfFields <- function(vcf.file, fields=NULL){
 
    vcf <- read.delim(
       vcf.file, skip=line_num-1,
-      check.names=F, stringsAsFactors=F
+      check.names=F, stringsAsFactors=F,
+      colClasses='character'
    )
+   vcf$POS <- as.integer(vcf$POS)
 
    ## Remove '#' from header line
    colnames(vcf) <- sub('^#','',colnames(vcf))
