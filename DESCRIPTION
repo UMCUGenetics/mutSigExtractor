@@ -1,7 +1,7 @@
 Package: mutSigExtractor
 Type: Package
 Title: Extracts SNV, indel, and SV signatures from vcf files.
-Version: 1.09
+Version: 1.11
 Author: Luan Nguyen
 Maintainer: The package maintainer <n.l.nguyen-2@umcutrecht.nl>
 Description: Extracts SNV, indel, and SV signatures from vcf files.
