@@ -80,7 +80,7 @@ extractSigsSnv <- function(
 
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      df <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, ...)
+      df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
    }
    df <- getContextsSnv(df, ref.genome=ref.genome, verbose=verbose)
 
@@ -143,7 +143,7 @@ extractSigsSnv <- function(
    } else if(output == 'signatures'){
       if(verbose){ message('Returning absolute signature contributions...') }
       ## Least squares fitting
-      out <- fitToSignatures(signature.profiles, context_counts)$x
+      out <- fitToSignatures(signature.profiles, context_counts, verbose=verbose)
       names(out) <- colnames(signature.profiles)
       out <- as.matrix(out)
    }
