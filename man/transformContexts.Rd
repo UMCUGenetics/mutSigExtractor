@@ -2,24 +2,27 @@
 % Please edit documentation in R/transformContexts.R
 \name{transformContexts}
 \alias{transformContexts}
-\title{Simplify and normalize contexts}
+\title{Various transformation of contexts (e.g. into mutational signatures)}
 \usage{
 transformContexts(
   contexts = NULL,
   snv = NULL,
+  dbs = NULL,
   indel = NULL,
   sv = NULL,
   simplify.types = NULL,
   lsqnonneg.types = NULL,
   rel.types = NULL,
-  sig.profiles = list(snv = SNV_SIGNATURE_PROFILES, indel = NULL, sv =
-    SV_SIGNATURE_PROFILES),
+  sig.profiles.snv = SBS_SIGNATURE_PROFILES_V2,
+  sig.profiles.dbs = DBS_SIGNATURE_PROFILES,
+  sig.profiles.sv = SV_SIGNATURE_PROFILES,
   export.list = F
 )
 }
 \arguments{
 \item{contexts}{A list containing data frames of snv, indel, and/or sv contexts. Alternatively,
-These can be specified with the arguments: snv, indel, or sv}
+these can be specified with the arguments: snv, indel, or sv. This is handy if one only wants to
+transform a matrix of a certain mut type}
 
 \item{snv}{See argument 'contexts'.}
 
@@ -27,13 +30,18 @@ These can be specified with the arguments: snv, indel, or sv}
 
 \item{sv}{See argument 'contexts'.}
 
-\item{simplify.types}{Which types to flatten. Accepts: 'snv','indel','sv'}
+\item{simplify.types}{Which types to flatten. Accepts: 'snv','indel','sv','all'}
 
-\item{lsqnonneg.types}{Which types to fit to signatures. Accepts: 'snv', 'sv'}
+\item{lsqnonneg.types}{Which types to fit to signatures. Accepts: 'snv', 'sv','all'}
 
-\item{rel.types}{Which types to convert to relative contribution. Accepts: 'snv','indel','sv'}
+\item{rel.types}{Which types to convert to relative contribution. Accepts: 'snv','indel','sv','all'}
 
-\item{sig.profiles}{A named list of the sig profiles used for lsqnonneg}
+\item{sig.profiles.snv}{SNV sig profiles used for lsqnonneg. Defaults to 30 COSMIC signatures}
+
+\item{sig.profiles.dbs}{DBS sig profiles used for lsqnonneg. Defaults to PCAWG DBS signatures}
+
+\item{sig.profiles.sv}{SV sig profiles used for lsqnonneg. Defaults to 6 SV signatures from 560
+breast cancer paper}
 
 \item{export.list}{Output a list with the split mutation types rather than a matrix?}
 }
@@ -41,7 +49,11 @@ These can be specified with the arguments: snv, indel, or sv}
 A matrix or data frame
 }
 \description{
-Exprimental; use at your own risk!
+Performs the following transformations of each mut type (snv, dbs, indel, sv) in the
+following order: simplify, least-squares fitting, calculate relative counts. Simplify flattens
+the 96 snv contexts into 6 contexts, indel contexts into their types (mh, rep, none),
+and SV type/length contexts into SV type. Least-squares fitting converts contexts into
+signatures.
 }
 \examples{
 base_dir <- '/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/Breast_Organoids/matrices/'
@@ -50,5 +62,5 @@ contexts <- list(
    indel = readSigsAsDf(paste0(base_dir,'/indel')),
    sv = readSigsAsDf(paste0(base_dir,'/sv_contexts'))
 )
-transformContexts(contexts, simplify.types = c('snv','indel','sv'), rel.types = c('snv','indel','sv'))
+transformContexts(contexts, simplify.types=c('snv','indel','sv'), rel.types=c('snv','indel','sv'))
 }

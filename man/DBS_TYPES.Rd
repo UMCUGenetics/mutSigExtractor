@@ -4,7 +4,9 @@
 \name{DBS_TYPES}
 \alias{DBS_TYPES}
 \title{Look up table for doublet base substitution types and reverse complement sequences}
-\format{An object of class \code{data.frame} with 78 rows and 3 columns.}
+\format{
+An object of class \code{data.frame} with 78 rows and 3 columns.
+}
 \usage{
 data(DBS_TYPES)
 }

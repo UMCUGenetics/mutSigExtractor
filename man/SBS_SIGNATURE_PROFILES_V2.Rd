@@ -5,7 +5,11 @@
 \name{SBS_SIGNATURE_PROFILES_V2}
 \alias{SBS_SIGNATURE_PROFILES_V2}
 \title{SBS signature profiles (original 30)}
-\format{An object of class \code{matrix} with 96 rows and 30 columns.}
+\format{
+An object of class \code{matrix} with 96 rows and 30 columns.
+
+An object of class \code{matrix} with 96 rows and 30 columns.
+}
 \usage{
 data(SBS_SIGNATURE_PROFILES_V2)
 

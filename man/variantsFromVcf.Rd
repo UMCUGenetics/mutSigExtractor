@@ -6,22 +6,15 @@
 \usage{
 variantsFromVcf(
   vcf.file,
-  mode = NULL,
-  sv.caller = "gridss",
   ref.genome = DEFAULT_GENOME,
   keep.chroms = NULL,
   vcf.filter = NA,
+  vcf.fields = c("CHROM", "POS", "REF", "ALT", "FILTER"),
   verbose = F
 )
 }
 \arguments{
 \item{vcf.file}{Path to the vcf file}
-
-\item{mode}{A character stating which type of signature is to be extracted: 'snv','indel', or 'sv'}
-
-\item{sv.caller}{Only applies when mode=='sv'. At this moment supports 'manta' or 'gridss'.
-Currently there is no standard to how SVs are reported in vcfs. Therefore, output from different
-callers will need to be parsed separately.}
 
 \item{ref.genome}{A character naming the BSgenome reference genome. Default is
 "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
@@ -32,6 +25,8 @@ sex chromosomes for example use: keep.chroms=paste0('chr',c(1:22,'X','Y'))}
 
 \item{vcf.filter}{A character or character vector to specifying which variants to keep,
 corresponding to the values in the vcf FILTER column}
+
+\item{vcf.fields}{A character vector specifying the vcf columns to retrieve}
 
 \item{verbose}{Print progress messages?}
 }

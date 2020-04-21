@@ -11,8 +11,8 @@ extractSigsSv(
   sample.name = NULL,
   sv.caller = "gridss",
   half.tra.counts = F,
-  sv.len.cutoffs = if (output == "signatures") {     c(10^c(3:7), Inf) } else {     c(0,
-    10^c(3:7), Inf) },
+  sv.len.cutoffs = if (output == "signatures") {     c(10^c(3:7), Inf) } else {    
+    c(0, 10^c(3:7), Inf) },
   signature.profiles = SV_SIGNATURE_PROFILES,
   verbose = F,
   ...
