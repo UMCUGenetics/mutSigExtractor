@@ -1,9 +1,8 @@
 #' Extract doublet base substitution contexts
 #'
 #' @param df A dataframe containing the columns: chrom, pos, ref, alt
-#' @param ref.genome A character naming the BSgenome reference genome. Default is
-#' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
-#' installed.
+#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
+#' reference genome is indicated, it will also need to be installed.
 #' @param verbose Print progress messages?
 #'
 #' @return A dataframe in the same structure as a bed file with an extra column stating the context
@@ -21,7 +20,7 @@ getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
    df <- df[!grepl(',',df$alt),]
 
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   seqlevelsStyle(df$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
+   GenomeInfoDb::seqlevelsStyle(df$chrom)<- seqlevelsStyle(ref.genome)
 
    if(verbose){ message('Subsetting for DBSs...') }
    df <- df[nchar(df$ref)==2 & nchar(df$alt)==2,]
@@ -83,9 +82,8 @@ getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 #' 96-trinucleotide contexts ('contexts')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
 #' this. If none is provided, the basename of the vcf file will be used.
-#' @param ref.genome A character naming the BSgenome reference genome. Default is
-#' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
-#' installed.
+#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
+#' reference genome is indicated, it will also need to be installed.
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are  the mutational signatures.
 #' @param verbose Print progress messages?

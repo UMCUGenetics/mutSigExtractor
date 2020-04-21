@@ -1,11 +1,11 @@
 #' Extract relevant variant info for extracting SNV, indel, and SV signatures.
 #'
 #' @param vcf.file Path to the vcf file
-#' @param ref.genome A character naming the BSgenome reference genome. Default is
-#' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
-#' installed.
-#' @param keep.chroms A character vector specifying which chromosomes to keep. To keep autosomal and
-#' sex chromosomes for example use: keep.chroms=paste0('chr',c(1:22,'X','Y'))
+#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
+#' reference genome is indicated, it will also need to be installed.
+#' @param keep.chroms A character vector specifying which chromosomes to keep (chromosome names
+#' should be in the style of the vcf). To keep autosomal and sex chromosomes for example use:
+#' keep.chroms=c(1:22,'X','Y')
 #' @param vcf.filter A character or character vector to specifying which variants to keep,
 #' corresponding to the values in the vcf FILTER column
 #' @param vcf.fields A character vector specifying the vcf columns to retrieve
@@ -32,21 +32,18 @@ variantsFromVcf <- function(
       return(NA)
    }
 
+   ## Keep certain chromosome types
+   if(!is.null(keep.chroms)){
+      if(verbose){ 'Only keeping chromosomes as indicated in keep.chroms...' }
+      ## Force chromosome name style to that in ref genome
+      vcf <- vcf[vcf$chrom %in% keep.chroms,]
+   }
+
    ## Set chromosome names to the same used in the supplied ref genome
    vcf$chrom <- as.character(vcf$chrom)
    if(!is.null(ref.genome)){
       if(verbose){ 'Converting chrom name style to style in ref.genome...' }
-      ref_genome <- eval(parse(text=ref.genome))
-      ref_organism <- GenomeInfoDb::organism(ref_genome)
-      seqlevelsStyle(vcf$chrom) <- seqlevelsStyle(ref_genome)
-   }
-
-   ## Keep certain chromosome types
-   if(!is.null(keep.chroms)){
-      if(is.null(ref.genome)){ stop('keep.chroms was specified but no reference genome was provided') }
-      if(verbose){ 'Only keeping chromosomes as indicated in keep.chroms...' }
-      seqlevelsStyle(keep.chroms) <- seqlevelsStyle(ref_genome) ## Force chromosome name style to that in ref genome
-      vcf <- vcf[vcf$chrom %in% keep.chroms,]
+      GenomeInfoDb::seqlevelsStyle(vcf$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
    }
 
    ## Filter vcf

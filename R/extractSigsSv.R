@@ -15,7 +15,7 @@ getContextsSv <- function(df, sv.caller='gridss', verbose=F){
    # df=variantsFromVcf(vcf.file, vcf.filter='PASS', vcf.fields=c('CHROM','POS','REF','ALT','FILTER','ID','INFO'))
    # sv.caller='gridss'
 
-   if(is.na(df)){
+   if(identical(df,NA)){
       return(NA)
    }
 
@@ -24,7 +24,7 @@ getContextsSv <- function(df, sv.caller='gridss', verbose=F){
 
       if(verbose){ message('Returning SV length and type...') }
 
-      out <- getInfoValues(vcf$info,c('SVTYPE','SVLEN'))
+      out <- getInfoValues(df$info,c('SVTYPE','SVLEN'))
       colnames(out) <- c('sv_type','sv_len')
       out$sv_len <- as.numeric(out$sv_len)
       out$sv_len[out$sv_type=='TRA'] <- NA
@@ -108,6 +108,7 @@ getContextsSv <- function(df, sv.caller='gridss', verbose=F){
 
 }
 
+####################################################################################################
 #' Extract structural variant signatures
 #'
 #' @description Will return a 1-column matrix containing: (if output = 'signatures') the absolute

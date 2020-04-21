@@ -1,9 +1,8 @@
 #' Extract indel sequence, type and length
 #'
 #' @param df A dataframe containing the columns: chrom, pos, ref, alt
-#' @param ref.genome A character naming the BSgenome reference genome. Default is
-#' "BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
-#' installed.
+#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
+#' reference genome is indicated, it will also need to be installed.
 #' @param get.other.indel.allele Only applies when mode=='indel' For indels, some vcfs only report
 #' the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
 #' allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
@@ -31,7 +30,7 @@ getContextsIndel <- function(
    df <- df[!grepl(',',df$alt),]
 
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   seqlevelsStyle(df$chrom) <- seqlevelsStyle(eval(parse(text=ref.genome)))
+   GenomeInfoDb::seqlevelsStyle(df$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
 
    if(verbose){ message('Determining indel type...') }
    ## Calc sequence lengths
@@ -72,14 +71,14 @@ getContextsIndel <- function(
          ## ref:   'AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
          ## alt:  'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
          ## nchar('AGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC') = nchar(ref) = 46
-         ## getSeq(x=eval(parse(text = ref.genome)), names='chr4',start=84726292-1,84726292+46-1)
+         ## getSeq(x=ref.genome, names='chr4',start=84726292-1,84726292+46-1)
          ##       'TAGAACTACCATATGACCCAGCAGTCCCATTCTGGGTATATATCCAC'
          ## 5' base relative to ref ->
          ##    alt column
          ##    ref sequence
          df_split$del_type$alt <- with(df_split$del_type, {
-            getSeq(
-               x=eval(parse(text=ref.genome)),
+            BSgenome::getSeq(
+               x=ref.genome,
                names=chrom, start=pos-1,end=pos-1,
                as.character=T
             )
@@ -93,15 +92,15 @@ getContextsIndel <- function(
          ## ref:  ''
          ## alt:  'AGAGAGAGAGACAGAA'
          ## nchar('AGAGAGAGAGACAGAA') = nchar(alt) = 16
-         ## getSeq(x=eval(parse(text = ref.genome)), names='chr12',start=6902128-1,6902128+16-1)
+         ## getSeq(x=ref.genome, names='chr12',start=6902128-1,6902128+16-1)
          ##      'GAGAGAGAGAGACAGAA'
          ## 5' base relative to alt ->
          ##    ref column
          ##    alt sequence
          ## Substract 1 from pos
          df_split$ins_type$ref <- with(df_split$ins_type, {
-            getSeq(
-               x=eval(parse(text=ref.genome)),
+            BSgenome::getSeq(
+               x=ref.genome,
                names=chrom, start=pos-1,end=pos-1,
                as.character=T
             )
@@ -157,14 +156,16 @@ getContextsIndel <- function(
 #'
 #' @param vcf.file Path to the vcf file
 #' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
-#' @param sample.name If a character is provided, the header for the output matrix will be named to this. If none is
-#' provided, the basename of the vcf file will be used.
-#' @param ref.genome A character naming the BSgenome reference genome. Default is "BSgenome.Hsapiens.UCSC.hg19". If another
+#' @param sample.name If a character is provided, the header for the output matrix will be named to
+#'   this. If none is provided, the basename of the vcf file will be used.
+#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
 #' reference genome is indicated, it will also need to be installed.
-#' @param indel.len.cap Specifies the max indel sequence length to consider when counting 'repeat' and 'none' contexts.
-#' Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.
-#' @param n.bases.mh.cap Specifies the max bases in microhomology to consider when counting repeat and microhomology
-#' contexts. Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.
+#' @param indel.len.cap Specifies the max indel sequence length to consider when counting 'repeat'
+#'   and 'none' contexts. Counts of longer indels will simply be binned to the counts of contexts at
+#'   the max indel sequence length.
+#' @param n.bases.mh.cap Specifies the max bases in microhomology to consider when counting repeat
+#'   and microhomology contexts. Counts of longer indels will simply be binned to the counts of
+#'   contexts at the max indel sequence length.
 #' @param get.other.indel.allele Only applies when mode=='indel' For indels, some vcfs only report
 #' the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
 #' allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
@@ -218,16 +219,16 @@ extractSigsIndel <- function(
       })
 
       if(verbose){ message('Retrieving flanking sequences...') }
-      l_flank <- getSeq(
-         x = eval(parse(text=ref.genome)),
+      l_flank <- BSgenome::getSeq(
+         x = ref.genome,
          names = df$chrom,
          start = flanks_start_end[,'l_start'],
          end = flanks_start_end[,'l_end'],
          as.character = T
       )
 
-      r_flank <- getSeq(
-         x = eval(parse(text=ref.genome)),
+      r_flank <- BSgenome::getSeq(
+         x = ref.genome,
          names = df$chrom,
          start = flanks_start_end[,'r_start'],
          end = flanks_start_end[,'r_end'],
@@ -241,7 +242,7 @@ extractSigsIndel <- function(
       #--------- Microhomology contexts ---------#
       if(verbose){ message("Calculating the (max) number of bases that are homologous to the 5'/3' flanking sequence...") }
       n_bases_mh <- unlist(Map(function(indel_seq, l_flank, r_flank){
-         mh_l <- nBasesMH(reverse(indel_seq), reverse(l_flank))
+         mh_l <- nBasesMH(IRanges::reverse(indel_seq), IRanges::reverse(l_flank))
          mh_r <- nBasesMH(indel_seq, r_flank)
 
          max(mh_l,mh_r)
