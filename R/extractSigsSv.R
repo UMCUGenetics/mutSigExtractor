@@ -1,3 +1,113 @@
+#' Determine SV type and length
+#'
+#' @param df A dataframe containing the columns: chrom, pos, ref, alt, filter, id, info
+#' @param sv.caller Only applies when mode=='sv'. At this moment supports 'manta', 'gridss', or 'pcawg'.
+#' Currently there is no standard to how SVs are reported in vcfs. Therefore, output from different
+#' callers will need to be parsed separately.
+#' @param verbose Print progress messages?
+#'
+#' @return A dataframe in the same structure as a bed file with an extra column stating the context
+#' of each variant
+#' @export
+getContextsSv <- function(df, sv.caller='gridss', verbose=F){
+   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160925_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
+   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/171223_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
+   # df=variantsFromVcf(vcf.file, vcf.filter='PASS', vcf.fields=c('CHROM','POS','REF','ALT','FILTER','ID','INFO'))
+   # sv.caller='gridss'
+
+   if(is.na(df)){
+      return(NA)
+   }
+
+   #========= Callers that report SVs =========#
+   if(sv.caller=='manta'){
+
+      if(verbose){ message('Returning SV length and type...') }
+
+      out <- getInfoValues(vcf$info,c('SVTYPE','SVLEN'))
+      colnames(out) <- c('sv_type','sv_len')
+      out$sv_len <- as.numeric(out$sv_len)
+      out$sv_len[out$sv_type=='TRA'] <- NA
+
+      return(out)
+   }
+
+   #========= Callers that report breakends =========#
+   df$info <- NULL
+
+   #--------- Determine breakend pairs ---------#
+   if(verbose){ message('Identifying breakend pairs...') }
+   ## Pair codes:
+   ## 0: unpaired
+   ## 1: 5' breakend
+   ## 2: 3' breakend
+   if(sv.caller=='gridss'){
+      id_nchars <- nchar(df$id)
+
+      #df$group_id <- substr(df$id, 1, id_nchars-1)
+      df <- df[grepl('^gridss',df$id),]
+      df$pair_id <- (function(){
+         v <- rep(0,nrow(df))
+         v[grepl('o$',df$id)] <- 1
+         v[grepl('h$',df$id)] <- 2
+         return(v)
+      })()
+
+   } else if(sv.caller=='pcawg'){
+      split_ids <- strsplit(df$id,'_')
+      #df$group_id <- sapply(split_ids,`[[`,1)
+      df$pair_id <- as.integer(sapply(split_ids,`[[`,2))
+   }
+
+   ## Sort by group id and pair id while (mostly) maintaining original vcf order
+   ## 5' breakend is forced to be 1st row
+   #df$group_id <- factor(df$group_id, unique(df$group_id))
+   #df <- df[order(df$group_id, df$pair_id),]
+
+   #--------- SV type and length ---------#
+   if(verbose){ message('Determining SV length and type...') }
+   ## Select 5prime pairs
+   df_ss <- df[df$pair_id %in% c(1,0),]
+
+   ## Get ALT coordinates
+   alt_coord <- regmatches(df_ss$alt, gregexpr('\\d|\\w+:\\d+', df_ss$alt))
+   alt_coord <- as.data.frame(do.call(rbind, lapply(alt_coord, function(i){
+      if(length(i) == 0){ c(NA,NA) }
+      else { unlist(strsplit(i, ':')) }
+   })))
+   colnames(alt_coord) <- c('chrom_alt','pos_alt')
+   df_ss <- cbind(df_ss,alt_coord); rm(alt_coord)
+   df_ss$chrom <- gsub('chr','',df_ss$chrom)
+
+   df_ss$pos_alt <- as.numeric(as.character(df_ss$pos_alt))
+   df_ss$sv_len <- df_ss$pos_alt - df_ss$pos
+
+   ## Decision tree
+   df_ss$sv_type <- with(df_ss,{
+      do.call(rbind,Map(function(pair_id, chrom, chrom_alt, alt, sv_len){
+         if(pair_id==0){ return('SGL') }
+         if(chrom != chrom_alt){ return('TRA') }
+         if(sv_len==1){ return('INS') }
+
+         if(grepl('\\w+\\[.+\\[', alt)){ return('DEL') }
+         if(grepl('\\].+\\]\\w+', alt)){ return('DUP') }
+
+         if(grepl('\\w+\\].+\\]', alt) | grepl('\\[.+\\[\\w+', alt) ){
+            return('INV')
+         }
+
+         return(NA)
+
+      }, pair_id, chrom, chrom_alt, alt, sv_len, USE.NAMES=F))
+   })
+
+   out <- df_ss[,c('sv_type','sv_len')]
+   out[out$sv_type  %in% c('TRA','SGL'),'sv_len'] <- NA
+
+   return(out)
+
+}
+
 #' Extract structural variant signatures
 #'
 #' @description Will return a 1-column matrix containing: (if output = 'signatures') the absolute
@@ -37,7 +147,11 @@ extractSigsSv <- function(
    verbose=F, ...
 ){
    if(!is.null(vcf.file)){
-      df <- variantsFromVcf(vcf.file, mode='sv', sv.caller=sv.caller, verbose=verbose, ...)
+      df <- variantsFromVcf(
+         vcf.file, vcf.fields=c('CHROM','POS','REF','ALT','FILTER','ID','INFO'),
+         verbose=verbose, ...
+      )
+      df <- getContextsSv(df, sv.caller=sv.caller, verbose=verbose)
    } else if(is.data.frame(df)){
       colnames(df) <- c('sv_type','sv_len')
       half.tra.counts <- F ## If providing dataframe as input default to 'manta'.
@@ -112,7 +226,7 @@ extractSigsSv <- function(
       }
 
       ## Least squares fitting
-      out <- fitToSignatures(signature.profiles, context_counts)$x
+      out <- fitToSignatures(signature.profiles, context_counts, verbose=verbose)
       names(out) <- colnames(signature.profiles)
       out <- as.matrix(out)
    }
