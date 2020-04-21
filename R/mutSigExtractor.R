@@ -1,21 +1,26 @@
 ## Global variables
 
-#--------- Auto-load hg19 ref genome if it exists ----------#
-DEFAULT_GENOME <- 'BSgenome.Hsapiens.UCSC.hg19'
-
+#--------- hg19 ref genome ----------#
 .onLoad <- function(libname, pkgname){
-   if(DEFAULT_GENOME %in% rownames(installed.packages())){
-      message('Loading the default reference genome: ', DEFAULT_GENOME)
-      do.call('library', list(DEFAULT_GENOME))
-   } else {
-      warning("
-         No reference genome loaded. Please install and/or load a BSgenome. For example:
+   DEFAULT_GENOME <- tryCatch({
+      BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19
+   }, error=function(e){ return() })
 
-         install.packages('BiocManager')
-         BiocManager::install('BSgenome.Hsapiens.UCSC.hg19')
-         library('BSgenome.Hsapiens.UCSC.hg19')
-      ")
+   if(is.null(DEFAULT_GENOME)){
+      warning("
+   No reference genome loaded. Please install and load a BSgenome.
+   For example:
+      install.packages('BiocManager')
+      BiocManager::install('BSgenome.Hsapiens.UCSC.hg19')
+      library('BSgenome.Hsapiens.UCSC.hg19')
+
+   Then specify the BSgenome to the ref.genome arguemnts to the relevant functions.
+   For example:
+      extractSigsSnv(..., ref.genome=BSgenome.Hsapiens.UCSC.hg19)
+")
    }
+
+   assign('DEFAULT_GENOME', DEFAULT_GENOME, envir=parent.env(environment()))
 }
 
 #--------- SNV context types ----------#
