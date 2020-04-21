@@ -9,9 +9,8 @@ getContextsSnv(df, ref.genome = DEFAULT_GENOME, verbose = F)
 \arguments{
 \item{df}{A dataframe containing the columns: chrom, pos, ref, alt}
 
-\item{ref.genome}{A character naming the BSgenome reference genome. Default is
-"BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
-installed.}
+\item{ref.genome}{A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
+reference genome is indicated, it will also need to be installed.}
 
 \item{verbose}{Print progress messages?}
 }

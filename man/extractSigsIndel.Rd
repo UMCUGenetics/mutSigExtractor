@@ -22,17 +22,19 @@ extractSigsIndel(
 
 \item{df}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
 
-\item{sample.name}{If a character is provided, the header for the output matrix will be named to this. If none is
-provided, the basename of the vcf file will be used.}
+\item{sample.name}{If a character is provided, the header for the output matrix will be named to
+this. If none is provided, the basename of the vcf file will be used.}
 
-\item{ref.genome}{A character naming the BSgenome reference genome. Default is "BSgenome.Hsapiens.UCSC.hg19". If another
+\item{ref.genome}{A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
 reference genome is indicated, it will also need to be installed.}
 
-\item{indel.len.cap}{Specifies the max indel sequence length to consider when counting 'repeat' and 'none' contexts.
-Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.}
+\item{indel.len.cap}{Specifies the max indel sequence length to consider when counting 'repeat'
+and 'none' contexts. Counts of longer indels will simply be binned to the counts of contexts at
+the max indel sequence length.}
 
-\item{n.bases.mh.cap}{Specifies the max bases in microhomology to consider when counting repeat and microhomology
-contexts. Counts of longer indels will simply be binned to the counts of contexts at the max indel sequence length.}
+\item{n.bases.mh.cap}{Specifies the max bases in microhomology to consider when counting repeat
+and microhomology contexts. Counts of longer indels will simply be binned to the counts of
+contexts at the max indel sequence length.}
 
 \item{get.other.indel.allele}{Only applies when mode=='indel' For indels, some vcfs only report
 the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported

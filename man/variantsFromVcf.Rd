@@ -16,12 +16,12 @@ variantsFromVcf(
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
-\item{ref.genome}{A character naming the BSgenome reference genome. Default is
-"BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
-installed.}
+\item{ref.genome}{A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
+reference genome is indicated, it will also need to be installed.}
 
-\item{keep.chroms}{A character vector specifying which chromosomes to keep. To keep autosomal and
-sex chromosomes for example use: keep.chroms=paste0('chr',c(1:22,'X','Y'))}
+\item{keep.chroms}{A character vector specifying which chromosomes to keep (chromosome names
+should be in the style of the vcf). To keep autosomal and sex chromosomes for example use:
+keep.chroms=c(1:22,'X','Y')}
 
 \item{vcf.filter}{A character or character vector to specifying which variants to keep,
 corresponding to the values in the vcf FILTER column}

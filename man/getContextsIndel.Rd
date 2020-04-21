@@ -15,9 +15,8 @@ getContextsIndel(
 \arguments{
 \item{df}{A dataframe containing the columns: chrom, pos, ref, alt}
 
-\item{ref.genome}{A character naming the BSgenome reference genome. Default is
-"BSgenome.Hsapiens.UCSC.hg19". If another reference genome is indicated, it will also need to be
-installed.}
+\item{ref.genome}{A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
+reference genome is indicated, it will also need to be installed.}
 
 \item{get.other.indel.allele}{Only applies when mode=='indel' For indels, some vcfs only report
 the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
