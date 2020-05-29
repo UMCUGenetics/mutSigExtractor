@@ -20,7 +20,7 @@ getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
    df <- df[!grepl(',',df$alt),]
 
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   GenomeInfoDb::seqlevelsStyle(df$chrom)<- seqlevelsStyle(ref.genome)
+   GenomeInfoDb::seqlevelsStyle(df$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
 
    if(verbose){ message('Subsetting for DBSs...') }
    df <- df[nchar(df$ref)==2 & nchar(df$alt)==2,]
@@ -69,7 +69,6 @@ getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 
 
 ####################################################################################################
-
 #' Extract doublet substitution signatures
 #'
 #' @description Will output a 1-column matrix containing: (if output = 'signatures') the absolute
@@ -99,36 +98,36 @@ extractSigsDbs <- function(
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
-      #variants <- variantsFromVcf(vcf.file, mode='snv_indel', ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS')
+      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose)
    }
    df <- getContextsDbs(df, ref.genome=ref.genome, verbose=verbose)
 
-   ## Check for weird nucleotides
-   which_weird_nt <- sort(unique(c(
-      grep('[^ACTG>]',df$substitution),
-      grep('[^ACTG]',df$tri_context)
-   )))
-
-   if(length(which_weird_nt)>0){
-      warning(
-         length(which_weird_nt),
-         ' variants containing nucleotides other than A,T,C,G were removed (rows: ',
-         paste(which_weird_nt, collapse=', '), ')'
-      )
-      df <- df[-which_weird_nt,]
-   }
-
-   if(verbose){ message('Counting DBS context occurrences...') }
+   if(verbose){ message('Initializing SNV signature output vector...') }
    context_counts <- structure(
       rep(0, nrow(DBS_TYPES)),
       names=DBS_TYPES$context
    )
 
    if(is.data.frame(df)){
+      ## Check for weird nucleotides
+      which_weird_nt <- sort(unique(c(
+         grep('[^ACTG>]',df$substitution),
+         grep('[^ACTG]',df$tri_context)
+      )))
+
+      if(length(which_weird_nt)>0){
+         warning(
+            length(which_weird_nt),
+            ' variants containing nucleotides other than A,T,C,G were removed (rows: ',
+            paste(which_weird_nt, collapse=', '), ')'
+         )
+         df <- df[-which_weird_nt,]
+      }
+
+      if(verbose){ message('Counting DBS context occurrences...') }
       tab <- table(df$context)
       context_counts[names(tab)] <- tab
    }
-
 
    if(output == 'contexts'){
       if(verbose){ message('Returning DBS context counts...') }
