@@ -9,19 +9,20 @@
 #' @param vcf.filter A character or character vector to specifying which variants to keep,
 #' corresponding to the values in the vcf FILTER column
 #' @param vcf.fields A character vector specifying the vcf columns to retrieve
+#' @param merge.consecutive Some vcfs report MNVs as consecutive variants. For these vcfs, such rows
+#' need to be merged into one row for proper function of downstream mutSigExtractor functions.
 #' @param verbose Print progress messages?
 #'
 #' @return A data frame containing the relevant variant info for extracting the indicated signature type
 #' @export
 variantsFromVcf <- function(
    vcf.file, ref.genome=DEFAULT_GENOME, keep.chroms=NULL,
-   vcf.filter=NA, vcf.fields=c('CHROM','POS','REF','ALT','FILTER'), verbose=F
+   vcf.filter=NA, vcf.fields=c('CHROM','POS','REF','ALT','FILTER'),
+   merge.consecutive=F,
+   verbose=F
 ){
-   # mode='sv'
-   # sv.caller='manta'
-   # vcf.filter='PASS'
-   # verbose=T
-   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/CHORD/example/vcf/PD3905_snv_indel.vcf.gz'
+
+   # vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/PCAWG/final_consensus_12oct/PASS_vcfs/SNV/0009b464-b376-4fbc-8a56-da538269a02f.consensus.20160830.somatic.snv_mnv/0009b464-b376-4fbc-8a56-da538269a02f.consensus.20160830.somatic.snv_mnv_PASS.vcf.gz'
 
    if(verbose){ message('Reading in vcf file...') }
    vcf <- readVcfFields(vcf.file, vcf.fields)
@@ -56,6 +57,51 @@ variantsFromVcf <- function(
    if(nrow(vcf)==0){
       if(verbose){ warning('After filtering, VCF contains no rows. Returning NA') }
       return(NA)
+   }
+
+   ## Flatten MNVs that are reported on consecutive rows
+   if(merge.consecutive){
+      if(verbose){ message('Merging consecutive rows...') }
+
+      ## Find consecutive variants per chromosome
+      vcf$chrom <- factor(vcf$chrom, unique(vcf$chrom))
+      vcf_split <- lapply(split(vcf, vcf$chrom), function(i){
+         #i=split(vcf, vcf$chrom)[[1]]
+         pos_diff <- c(0,diff(i$pos))
+
+         is_consecutive <- pos_diff==1
+         is_consecutive[which(is_consecutive)-1] <- TRUE
+
+         i$is_consecutive <- is_consecutive
+
+         return(i)
+      })
+
+      vcf <- do.call(rbind, vcf_split)
+
+      ## Groups rows into consecutive/non-consecutive
+      rle_out <- rle(vcf$is_consecutive)
+      vcf$group <- rep(
+         1:length(rle_out$lengths),
+         times=rle_out$lengths
+      )
+      vcf$group <- factor(vcf$group, unique(vcf$group))
+
+      ## Merge consecutive variants
+      vcf_split <- split(vcf, vcf$group)
+      vcf <- do.call(rbind, lapply(vcf_split, function(i){
+         if(!i$is_consecutive[1]){ return(i) }
+
+         out <- i[1,]
+         out$ref <- paste(i$ref,collapse='')
+         out$alt <- paste(i$alt,collapse='')
+
+         return(out)
+      }))
+
+      rownames(vcf) <- NULL
+      vcf$is_consecutive <- vcf$group <- NULL
+      vcf$chrom <- as.character(vcf$chrom)
    }
 
    return(vcf)
