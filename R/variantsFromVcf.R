@@ -21,7 +21,6 @@ variantsFromVcf <- function(
    merge.consecutive=F,
    verbose=F
 ){
-
    # vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/PCAWG/final_consensus_12oct/PASS_vcfs/SNV/0009b464-b376-4fbc-8a56-da538269a02f.consensus.20160830.somatic.snv_mnv/0009b464-b376-4fbc-8a56-da538269a02f.consensus.20160830.somatic.snv_mnv_PASS.vcf.gz'
 
    if(verbose){ message('Reading in vcf file...') }
@@ -33,18 +32,19 @@ variantsFromVcf <- function(
       return(NA)
    }
 
-   ## Keep certain chromosome types
-   if(!is.null(keep.chroms)){
-      if(verbose){ 'Only keeping chromosomes as indicated in keep.chroms...' }
-      ## Force chromosome name style to that in ref genome
-      vcf <- vcf[vcf$chrom %in% keep.chroms,]
-   }
-
    ## Set chromosome names to the same used in the supplied ref genome
    vcf$chrom <- as.character(vcf$chrom)
    if(!is.null(ref.genome)){
-      if(verbose){ 'Converting chrom name style to style in ref.genome...' }
+      if(verbose){ message('Converting chrom name style to style in ref.genome...') }
       GenomeInfoDb::seqlevelsStyle(vcf$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
+   }
+
+   ## Keep certain chromosome types
+   if(!is.null(keep.chroms)){
+      if(verbose){ message('Only keeping chromosomes as indicated in keep.chroms...') }
+      ## Force chromosome name style to that in ref genome
+      GenomeInfoDb::seqlevelsStyle(keep.chroms)<-  GenomeInfoDb::seqlevelsStyle(ref.genome)
+      vcf <- vcf[vcf$chrom %in% keep.chroms,]
    }
 
    ## Filter vcf
