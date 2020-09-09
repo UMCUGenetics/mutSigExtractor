@@ -12,7 +12,7 @@ extractSigsIndel(
   indel.len.cap = 5,
   n.bases.mh.cap = 5,
   get.other.indel.allele = F,
-  contexts.only = F,
+  return.raw = F,
   verbose = F,
   ...
 )
@@ -40,6 +40,8 @@ contexts at the max indel sequence length.}
 the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
 allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
 will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).}
+
+\item{return.raw}{If TRUE, will return a dataframe with the characteristics of each indel}
 
 \item{verbose}{Print progress messages?}
 

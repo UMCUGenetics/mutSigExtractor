@@ -10,6 +10,7 @@ variantsFromVcf(
   keep.chroms = NULL,
   vcf.filter = NA,
   vcf.fields = c("CHROM", "POS", "REF", "ALT", "FILTER"),
+  merge.consecutive = F,
   verbose = F
 )
 }
@@ -27,6 +28,9 @@ keep.chroms=c(1:22,'X','Y')}
 corresponding to the values in the vcf FILTER column}
 
 \item{vcf.fields}{A character vector specifying the vcf columns to retrieve}
+
+\item{merge.consecutive}{Some vcfs report MNVs as consecutive variants. For these vcfs, such rows
+need to be merged into one row for proper function of downstream mutSigExtractor functions.}
 
 \item{verbose}{Print progress messages?}
 }

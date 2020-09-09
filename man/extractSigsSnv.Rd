@@ -10,7 +10,7 @@ extractSigsSnv(
   output = "signatures",
   sample.name = NULL,
   ref.genome = DEFAULT_GENOME,
-  signature.profiles = SNV_SIGNATURE_PROFILES_V2,
+  signature.profiles = SBS_SIGNATURE_PROFILES_V2,
   verbose = F,
   ...
 )
