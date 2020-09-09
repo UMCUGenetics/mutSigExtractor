@@ -242,11 +242,11 @@ extractSigsIndel <- function(
 
       #--------- Repeat contexts ---------#
       if(verbose){ message("Calculating the number of copies of the indel sequence are present in the 3' flanking sequence...") }
-      n_copies_along_flank <- unlist(Map(nCopiesAlongFlank, df$indel_seq, r_flank, USE.NAMES=F))
+      df$n_copies_along_flank <- unlist(Map(nCopiesAlongFlank, df$indel_seq, r_flank, USE.NAMES=F))
 
       #--------- Microhomology contexts ---------#
       if(verbose){ message("Calculating the (max) number of bases that are homologous to the 5'/3' flanking sequence...") }
-      n_bases_mh <- unlist(Map(function(indel_seq, l_flank, r_flank){
+      df$n_bases_mh <- unlist(Map(function(indel_seq, l_flank, r_flank){
          mh_l <- nBasesMH(IRanges::reverse(indel_seq), IRanges::reverse(l_flank))
          mh_r <- nBasesMH(indel_seq, r_flank)
 
@@ -272,7 +272,7 @@ extractSigsIndel <- function(
 
          return(context)
 
-      }, n_copies_along_flank, n_bases_mh, df$indel_len))
+      }, df$n_copies_along_flank, df$n_bases_mh, df$indel_len))
 
       if(return.raw){ return(df) }
 
@@ -283,8 +283,8 @@ extractSigsIndel <- function(
          indel_type = df$indel_type,
          context=df$context,
          indel_len = df$indel_len,
-         n_copies_along_flank,
-         n_bases_mh
+         n_copies_along_flank=df$n_copies_along_flank,
+         n_bases_mh=df$n_bases_mh
       )
 
       ## Bin values larger than cap into one bin for indel_len and n_bases_mh
