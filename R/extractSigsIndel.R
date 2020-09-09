@@ -174,6 +174,7 @@ getContextsIndel <- function(
 #' the sequence of one allele (REF for deletions and ALT for insertions). If TRUE, the unreported
 #' allele will be retrieved from the genome: a 5' base relative to the indel sequence. This base
 #' will also be added to the indel sequence and the POS will be adjusted accordingly (POS=POS-1).
+#' @param return.raw If TRUE, will return a dataframe with the characteristics of each indel
 #' @param verbose Print progress messages?
 #' @param ... Other arguments that can be passed to variantsFromVcf()
 #'
@@ -181,7 +182,7 @@ getContextsIndel <- function(
 #' @export
 extractSigsIndel <- function(
    vcf.file=NULL, df=NULL, sample.name=NULL, ref.genome=DEFAULT_GENOME,
-   indel.len.cap=5, n.bases.mh.cap=5, get.other.indel.allele=F, contexts.only=F,
+   indel.len.cap=5, n.bases.mh.cap=5, get.other.indel.allele=F, return.raw=F,
    verbose=F, ...
 ){
 
@@ -255,7 +256,7 @@ extractSigsIndel <- function(
 
       #--------- Assign repeat, microhomology, or no context ---------#
       if(verbose){ message('Determining indel contexts...') }
-      context <- unlist(Map(function(n_copies_along_flank, n_bases_mh, indel_len){
+      df$context <- unlist(Map(function(n_copies_along_flank, n_bases_mh, indel_len){
          if (n_copies_along_flank >= 2){
             if(indel_len < 50){ context <-'rep' }
             else { context <- 'mh' }
@@ -273,14 +274,14 @@ extractSigsIndel <- function(
 
       }, n_copies_along_flank, n_bases_mh, df$indel_len))
 
-      if(contexts.only){ return(context) }
+      if(return.raw){ return(df) }
 
       #--------- Gather components for counting final contexts/signatures ---------#
       if(verbose){ message('Counting indel context occurrences...') }
       ## Slightly redundant (could have just assigned components to a dataframe). But easier to debug
       sig_parts <- data.frame(
          indel_type = df$indel_type,
-         context,
+         context=df$context,
          indel_len = df$indel_len,
          n_copies_along_flank,
          n_bases_mh
