@@ -10,6 +10,10 @@
 #' @export
 getContextsSnv <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 
+   if(nrow(df)==0){
+      return(data.frame())
+   }
+
    df_colnames <- c('chrom','pos','ref','alt')
    if(!(identical(colnames(df)[1:4], df_colnames))){
       warning("colnames(df)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
@@ -25,8 +29,8 @@ getContextsSnv <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
    if(verbose){ message('Subsetting for SNVs...') }
    df <- df[nchar(df$ref)==1 & nchar(df$alt)==1,]
    if(nrow(df)==0){
-      warning('No variants remained after subsetting for SNVs. Returning NA')
-      return(NA)
+      warning('No variants remained after subsetting for SNVs. Returning empty dataframe')
+      return(data.frame())
    }
 
    if(verbose){ message('Returning SNV trinucleotide contexts...') }
@@ -72,7 +76,7 @@ getContextsSnv <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 #' @export
 extractSigsSnv <- function(
    vcf.file=NULL, df=NULL, output='signatures', sample.name=NULL,
-   ref.genome=DEFAULT_GENOME, signature.profiles=SNV_SIGNATURE_PROFILES_V2,
+   ref.genome=DEFAULT_GENOME, signature.profiles=SBS_SIGNATURE_PROFILES_V2,
    verbose=F, ...
 ){
 
@@ -95,10 +99,7 @@ extractSigsSnv <- function(
          paste(which_weird_nt, collapse=', '), ')'
       )
       df <- df[-which_weird_nt,]
-      if(nrow(df)==0){
-         warning('No variants remained after removing weird nucleotides. Returning NA')
-         return(NA)
-      }
+      if(nrow(df)==0){ warning('No variants remained after removing weird nucleotides') }
    }
 
    if(verbose){ message('Initializing SNV signature output vector...') }
@@ -107,7 +108,7 @@ extractSigsSnv <- function(
       names=SUBS_CONTEXTS_96
    )
 
-   if(is.data.frame(df)){ ## Don't process empty vcfs (df==NA if empty)
+   if(nrow(df)!=0){ ## Don't process empty vcfs
       if(verbose){ message('Converting trinucleotide contexts to substitution contexts...') }
       ## Get trinucleotide contexts that don't conform to C>N or T>N
       select_opp_types <- which(!(df$substitution %in% SUBSTITUTIONS))

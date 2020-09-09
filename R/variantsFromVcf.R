@@ -28,8 +28,8 @@ variantsFromVcf <- function(
    colnames(vcf) <- tolower(colnames(vcf))
 
    if(nrow(vcf)==0){
-      if(verbose){ warning('VCF contains no rows. Returning NA') }
-      return(NA)
+      if(verbose){ warning('VCF contains no rows. Returning empty dataframe') }
+      return(data.frame())
    }
 
    ## Set chromosome names to the same used in the supplied ref genome
@@ -41,7 +41,7 @@ variantsFromVcf <- function(
 
    ## Keep certain chromosome types
    if(!is.null(keep.chroms)){
-      if(verbose){ message('Only keeping chromosomes as indicated in keep.chroms...') }
+      if(verbose){ message('Keeping chromosomes as indicated in keep.chroms...') }
       ## Force chromosome name style to that in ref genome
       GenomeInfoDb::seqlevelsStyle(keep.chroms)<-  GenomeInfoDb::seqlevelsStyle(ref.genome)
       vcf <- vcf[vcf$chrom %in% keep.chroms,]
@@ -49,14 +49,14 @@ variantsFromVcf <- function(
 
    ## Filter vcf
    if(!is.na(vcf.filter)){
-      if(verbose){ message('Only keeping variants where FILTER is ', paste(vcf.filter,collapse=', ')) }
+      if(verbose){ message('Keeping variants where FILTER is ', paste(vcf.filter,collapse=', '),' ...') }
       vcf <- vcf[vcf$filter %in% vcf.filter,]
       vcf$filter <- NULL
    }
 
    if(nrow(vcf)==0){
-      if(verbose){ warning('After filtering, VCF contains no rows. Returning NA') }
-      return(NA)
+      if(verbose){ warning('After filtering, VCF contains no rows. Returning empty dataframe') }
+      return(data.frame())
    }
 
    ## Flatten MNVs that are reported on consecutive rows

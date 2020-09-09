@@ -9,14 +9,14 @@
 #' @return A dataframe in the same structure as a bed file with an extra column stating the context
 #' of each variant
 #' @export
-getContextsSv <- function(df, sv.caller='gridss', verbose=F){
+getContextsSv <- function(df, sv.caller='gridss', return.raw=F, verbose=F){
    # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160925_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
    # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/171223_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
    # df=variantsFromVcf(vcf.file, vcf.filter='PASS', vcf.fields=c('CHROM','POS','REF','ALT','FILTER','ID','INFO'))
    # sv.caller='gridss'
 
-   if(identical(df,NA)){
-      return(NA)
+   if(nrow(df)==0){
+      return(data.frame())
    }
 
    #========= Callers that report SVs =========#
@@ -101,10 +101,13 @@ getContextsSv <- function(df, sv.caller='gridss', verbose=F){
       }, pair_id, chrom, chrom_alt, alt, sv_len, USE.NAMES=F))
    })
 
-   out <- df_ss[,c('sv_type','sv_len')]
-   out[out$sv_type  %in% c('TRA','SGL'),'sv_len'] <- NA
+   df_ss[df_ss$sv_type  %in% c('TRA','SGL'),'sv_len'] <- NA
 
-   return(out)
+   if(!return.raw){
+      df_ss[,c('sv_type','sv_len')]
+   } else {
+      df_ss
+   }
 
 }
 
@@ -153,10 +156,17 @@ extractSigsSv <- function(
          verbose=verbose, ...
       )
       df <- getContextsSv(df, sv.caller=sv.caller, verbose=verbose)
-   } else if(is.data.frame(df)){
-      colnames(df) <- c('sv_type','sv_len')
+
+      ##
+      df <- variantsFromVcf(vcf.file, vcf.filter='PASS', vcf.fields=c('CHROM','POS','REF','ALT','FILTER','ID','INFO'))
+      df <- getContextsSv(df, sv.caller=sv.caller, verbose=verbose, return.raw=T)
+      # df[df$id=='gridss96_11128o',]
+      ##
+
+   } else if(!is.null(df)){
+      #colnames(df) <- c('sv_type','sv_len')
       half.tra.counts <- F ## If providing dataframe as input default to 'manta'.
-   } else if(!is.na(df)) {
+   } else {
       stop('Please specify either vcf.file or df as input')
    }
 
@@ -182,19 +192,31 @@ extractSigsSv <- function(
    })
 
    ## Deal with empty vcfs
-   if(!is.data.frame(df) && is.na(df)){
+   if(nrow(df)==0){
       context_counts <- rep(0, nrow(sv_contexts)+1)
-   }
-
-   else {
+   } else {
       if(verbose){ message('Counting DEL, DUP, and INV context occurrences...') }
+
+      # df2 <- do.call(rbind, lapply(1:nrow(sv_contexts), function(i){
+      #    row <- sv_contexts[i,]
+      #    df_ss <- df[
+      #       df$sv_type == row$sv_type
+      #       & df$sv_len >= row$lower_cutoff
+      #       & df$sv_len < row$upper_cutoff
+      #    ,]
+      #    df_ss$context <- row[,'name']
+      #    return(df_ss)
+      # }))
+      # df2[df2$id=='gridss96_11128o',]
+      # table(df2$context)
+
       context_counts <- unlist(lapply(1:nrow(sv_contexts), function(i){
          row <- sv_contexts[i,]
          variants_ss <- df[
             df$sv_type == row$sv_type
             & df$sv_len >= row$lower_cutoff
             & df$sv_len < row$upper_cutoff
-            ,]
+         ,]
 
          nrow(variants_ss)
       }))

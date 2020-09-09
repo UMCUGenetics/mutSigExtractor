@@ -19,6 +19,10 @@ getContextsIndel <- function(
    df, ref.genome=DEFAULT_GENOME, get.other.indel.allele=F, keep.indel.types=c('del','ins'), verbose=F
 ){
 
+   if(nrow(df)==0){
+      return(data.frame())
+   }
+
    df_colnames <- c('chrom','pos','ref','alt')
    if(!(identical(colnames(df)[1:4], df_colnames))){
       warning("colnames(df)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
@@ -40,8 +44,8 @@ getContextsIndel <- function(
    ## Remove snvs
    df <- df[!(df$ref_len==1 & df$alt_len==1),]
    if(nrow(df)==0){
-      warning('No variants remained after subsetting for indels. Returning NA')
-      return(NA)
+      warning('No variants remained after subsetting for indels. Returning empty data.frame')
+      return(data.frame())
    }
 
    ## Determine indel type
@@ -201,7 +205,7 @@ extractSigsIndel <- function(
    )
    indel_sigs <- structure(rep(0,length(indel_sig_names)), names=indel_sig_names)
 
-   if(is.data.frame(df)){ ## Don't process empty vcfs (df==NA if empty)
+   if(nrow(df)!=0){ ## Don't process empty vcfs
 
       #--------- Pre-calculations for repeat and microhomology contexts ---------#
       if(verbose){ message('Determining the start/end positions for the left/right flanks of each indel...') }

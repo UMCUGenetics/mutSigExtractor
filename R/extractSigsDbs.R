@@ -10,6 +10,10 @@
 #' @export
 getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
 
+   if(nrow(df)==0){
+      return(data.frame())
+   }
+
    df_colnames <- c('chrom','pos','ref','alt')
    if(!(identical(colnames(df)[1:4], df_colnames))){
       warning("colnames(df)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
@@ -25,27 +29,8 @@ getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
    if(verbose){ message('Subsetting for DBSs...') }
    df <- df[nchar(df$ref)==2 & nchar(df$alt)==2,]
    if(nrow(df)==0){
-      warning('No variants remained after subsetting for DBSs. Returning NA')
-      return(NA)
-   }
-
-   ## Check for weird nucleotides
-   which_weird_nt <- sort(unique(c(
-      grep('[^ACTG]',df$ref),
-      grep('[^ACTG]',df$alt)
-   )))
-
-   if(length(which_weird_nt)>0){
-      warning(
-         length(which_weird_nt),
-         ' variants containing nucleotides other than A,T,C,G were removed (rows: ',
-         paste(which_weird_nt, collapse=', '), ')'
-      )
-      df <- df[-which_weird_nt,]
-      if(nrow(df)==0){
-         warning('No variants remained after removing weird nucleotides. Returning NA')
-         return(NA)
-      }
+      warning('No variants remained after subsetting for DBSs. Returning empty dataframe')
+      return(data.frame())
    }
 
    df$context <- paste0(df$ref,'>',df$alt)
@@ -108,7 +93,7 @@ extractSigsDbs <- function(
       names=DBS_TYPES$context
    )
 
-   if(is.data.frame(df)){
+   if(nrow(df)!=0){
       ## Check for weird nucleotides
       which_weird_nt <- sort(unique(c(
          grep('[^ACTG>]',df$substitution),
