@@ -23,6 +23,11 @@ getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
    if(verbose){ message('Removing rows with multiple ALT sequences...') }
    df <- df[!grepl(',',df$alt),]
 
+   if(nrow(df)==0){
+      warning('No variants remained after subsetting for variants with one ALT sequence. Returning empty dataframe')
+      return(data.frame())
+   }
+
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
    GenomeInfoDb::seqlevelsStyle(df$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
 
@@ -121,7 +126,7 @@ extractSigsDbs <- function(
    } else if(output == 'signatures'){
       if(verbose){ message('Returning DBS signature contributions...') }
       ## Least squares fitting
-      out <- fitToSignatures(signature.profiles, context_counts, verbose=verbose)
+      out <- fitToSignatures(context_counts, signature.profiles)
       names(out) <- colnames(signature.profiles)
       out <- as.matrix(out)
    }

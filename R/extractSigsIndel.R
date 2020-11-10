@@ -33,6 +33,11 @@ getContextsIndel <- function(
    if(verbose){ message('Removing rows with multiple ALT sequences...') }
    df <- df[!grepl(',',df$alt),]
 
+   if(nrow(df)==0){
+      warning('No variants remained after subsetting for variants with one ALT sequence. Returning empty dataframe')
+      return(data.frame())
+   }
+
    if(verbose){ message('Converting chrom name style to style in ref.genome...') }
    GenomeInfoDb::seqlevelsStyle(df$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
 

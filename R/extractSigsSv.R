@@ -249,7 +249,7 @@ extractSigsSv <- function(
       }
 
       ## Least squares fitting
-      out <- fitToSignatures(signature.profiles, context_counts, verbose=verbose)
+      out <- fitToSignatures(context_counts, signature.profiles)
       names(out) <- colnames(signature.profiles)
       out <- as.matrix(out)
    }

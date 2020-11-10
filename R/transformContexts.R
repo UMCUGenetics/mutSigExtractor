@@ -61,7 +61,7 @@ transformContexts <- function(
       }
 
       if(any(c('snv','all') %in% lsqnonneg.types)){
-         snv <- fitToSignatures(sig.profiles.snv, contexts$snv)
+         snv <- fitToSignatures(mut.context.counts=ontexts$snv, signature.profiles=sig.profiles.snv)
       }
 
       if(any(c('snv','all') %in% rel.types)){
@@ -75,7 +75,7 @@ transformContexts <- function(
    if(!is.null(dbs)){
 
       if(any(c('dbs','all') %in% lsqnonneg.types)){
-         dbs <- fitToSignatures(sig.profiles.dbs, contexts$dbs)
+         dbs <- fitToSignatures(mut.context.counts=contexts$dbs, signature.profiles=sig.profiles.dbs)
       }
 
       if(any(c('dbs','all') %in% rel.types)){
@@ -115,7 +115,7 @@ transformContexts <- function(
       }
 
       if(any(c('sv','all') %in% lsqnonneg.types)){
-         sv <- fitToSignatures(sig.profiles.sv, contexts$sv)
+         sv <- fitToSignatures(mut.context.counts=contexts$sv, signature.profiles=sig.profiles.sv)
       }
 
       if(any(c('sv','all') %in% rel.types)){
