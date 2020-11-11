@@ -38,7 +38,7 @@ devtools::install_github('https://github.com/UMCUGenetics/mutSigExtractor/')
 ```
 
 Other genomes (e.g. for hg38: `BSgenome.Hsapiens.UCSC.hg38`) can also be used. Please see the below 
-tutorial for details
+tutorial for details.
 
 ## Tutorial
 The `COLO829v003T.purple.somatic.vcf.gz` and `COLO829v003T.purple.sv.vcf.gz` files in `doc/vcf/`
@@ -96,9 +96,9 @@ respectively. For this example we will use the PCAWG profiles (`SBS_SIGNATURE_PR
 ```{r message=FALSE, warning=FALSE}
 SBS_SIGNATURE_PROFILES_V3[1:5,1:5]
 ```
-Signature fitting is done using `fitToSignatures()` (this uses non-negative linear least squares
-algorithm; based on `lsqnonneq()` from the `pracma` package). `mut.context.counts` can be a numeric
-vector, matrix, or dataframe. If a matrix/dataframe, row represent samples and columns represent 
+Signature fitting is done using `fitToSignatures()` This function uses the non-negative linear least 
+squares algorithm based on `lsqnonneq()` from the `pracma` package. `mut.context.counts` can be a numeric
+vector, matrix, or dataframe. If a matrix/dataframe, rows represent samples and columns represent 
 contexts.
 ```{r message=FALSE, warning=FALSE}
 sigs_snv <- fitToSignatures(

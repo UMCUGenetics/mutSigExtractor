@@ -41,7 +41,7 @@ devtools::install_github('https://github.com/UMCUGenetics/mutSigExtractor/')
 ```
 
 Other genomes (e.g. for hg38: `BSgenome.Hsapiens.UCSC.hg38`) can also be
-used. Please see the below tutorial for details
+used. Please see the below tutorial for details.
 
 ## Tutorial
 
@@ -117,10 +117,10 @@ SBS_SIGNATURE_PROFILES_V3[1:5,1:5]
     ## A[C>A]T 0.001280 9.78e-05 0.01220 0.0295 0.00661
     ## C[C>A]A 0.000312 2.08e-04 0.02250 0.0807 0.00743
 
-Signature fitting is done using `fitToSignatures()` (this uses
-non-negative linear least squares algorithm; based on `lsqnonneq()` from
-the `pracma` package). `mut.context.counts` can be a numeric vector,
-matrix, or dataframe. If a matrix/dataframe, row represent samples and
+Signature fitting is done using `fitToSignatures()` This function uses
+the non-negative linear least squares algorithm based on `lsqnonneq()`
+from the `pracma` package. `mut.context.counts` can be a numeric vector,
+matrix, or dataframe. If a matrix/dataframe, rows represent samples and
 columns represent contexts.
 
 ``` r
