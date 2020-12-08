@@ -61,7 +61,7 @@ transformContexts <- function(
       }
 
       if(any(c('snv','all') %in% lsqnonneg.types)){
-         snv <- fitToSignatures(mut.context.counts=ontexts$snv, signature.profiles=sig.profiles.snv)
+         snv <- fitToSignatures(mut.context.counts=contexts$snv, signature.profiles=sig.profiles.snv)
       }
 
       if(any(c('snv','all') %in% rel.types)){
