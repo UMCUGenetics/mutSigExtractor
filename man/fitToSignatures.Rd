@@ -2,15 +2,37 @@
 % Please edit documentation in R/fitToSignatures.R
 \name{fitToSignatures}
 \alias{fitToSignatures}
+\alias{fitToSignaturesFast}
+\alias{fitToSignatures.default}
+\alias{fitToSignatures.matrix}
+\alias{fitToSignatures.data.frame}
 \title{Linear least-squares (non-negative) fitting}
 \usage{
-fitToSignatures(signature.profiles, mut.context.counts, verbose = F)
+fitToSignatures(mut.context.counts, ...)
+
+fitToSignaturesFast(mut.context.counts, signature.profiles, verbose = F)
+
+\method{fitToSignatures}{default}(
+  mut.context.counts,
+  signature.profiles,
+  method = "lsq",
+  max.delta = 0.01,
+  verbose = F
+)
+
+\method{fitToSignatures}{matrix}(mut.context.counts, signature.profiles, verbose = F, ...)
+
+\method{fitToSignatures}{data.frame}(mut.context.counts, signature.profiles, verbose = F, ...)
 }
 \arguments{
-\item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are the mutation
-contexts and the columns are  the mutational signatures.}
+\item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are
+the mutation contexts and the columns are the mutational signatures.}
 
 \item{verbose}{Show messages?}
+
+\item{method}{Can be 'lsq' or 'strict'. See description}
+
+\item{max.delta}{See description.}
 
 \item{mut.contexts}{A vector of mutation contexts for fitting}
 }
@@ -20,6 +42,18 @@ contribution of each signature (i.e. the number of mutations contributing to eac
 signature). If a matrix is provided, a matrix of absolute contributions is returned
 }
 \description{
-Calculate the contribution of each mutational signature in a sample, given a vector of mutation contexts.
-The eps() and lsqnonneg() functions have been extracted and adapted from the pracma R package.
+Calculate the contribution of each mutational signature in a sample, given a vector
+of mutation contexts. This function is an adaptation of the lsqnonneg() function in the pracma
+R package.
+
+When method=='lsq' fitToSignatures() simplify performs the least-squares fitting, i.e. find a
+linear non-negative combination of mutation signatures that reconstructs the mutation matrix
+
+fitToSignatures() is however prone to overfitting. When method=='strict', this is solved by
+removing the signature with the lowest contribution and least-squares fitting is repeated. This
+is done in an iterative fashion. Each time the cosine distance between the original and
+reconstructed profile is calculated. Iterations are stopped when cosine distance > max.delta. The
+second-last set of signatures is then returned.
+
+fitToSignaturesFast() is a wrapper for NNLM::nnlm() and only performs the least-squares fitting
 }
