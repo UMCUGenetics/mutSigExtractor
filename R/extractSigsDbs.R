@@ -1,64 +1,3 @@
-#' Extract doublet base substitution contexts
-#'
-#' @param df A dataframe containing the columns: chrom, pos, ref, alt
-#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
-#' reference genome is indicated, it will also need to be installed.
-#' @param verbose Print progress messages?
-#'
-#' @return A dataframe in the same structure as a bed file with an extra column stating the context
-#' of each variant
-#' @export
-getContextsDbs <- function(df, ref.genome=DEFAULT_GENOME, verbose=F){
-
-   if(nrow(df)==0){
-      return(data.frame())
-   }
-
-   df_colnames <- c('chrom','pos','ref','alt')
-   if(!(identical(colnames(df)[1:4], df_colnames))){
-      warning("colnames(df)[1:4] != c('chrom','pos','ref','alt'). Assuming first 4 columns are these columns")
-      colnames(df)[1:4] <- df_colnames
-   }
-
-   if(verbose){ message('Removing rows with multiple ALT sequences...') }
-   df <- df[!grepl(',',df$alt),]
-
-   if(nrow(df)==0){
-      warning('No variants remained after subsetting for variants with one ALT sequence. Returning empty dataframe')
-      return(data.frame())
-   }
-
-   if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   GenomeInfoDb::seqlevelsStyle(df$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
-
-   if(verbose){ message('Subsetting for DBSs...') }
-   df <- df[nchar(df$ref)==2 & nchar(df$alt)==2,]
-   if(nrow(df)==0){
-      warning('No variants remained after subsetting for DBSs. Returning empty dataframe')
-      return(data.frame())
-   }
-
-   df$context <- paste0(df$ref,'>',df$alt)
-
-   ## Get reverse complement (from lookup table) where applicable
-   df$index <- 1:nrow(df) ## Create index to maintain original row order
-   df_split <- list(
-      'TRUE'=df[df$context %in% DBS_TYPES$context,],
-      'FALSE'=df[!(df$context %in% DBS_TYPES$context),] ## Needs reverse complementing
-   )
-
-   df_split[['FALSE']] <- within(df_split[['FALSE']],{
-      context <- DBS_TYPES$context[ match(context, DBS_TYPES$context_rev_comp) ]
-   })
-
-   df <- rbind(df_split[['FALSE']],df_split[['TRUE']]); rm(df_split)
-   df <- df[order(df$index),]; df$index <- NULL ## Restore original row order
-
-   return(df)
-}
-
-
-####################################################################################################
 #' Extract doublet substitution signatures
 #'
 #' @description Will output a 1-column matrix containing: (if output = 'signatures') the absolute
@@ -85,12 +24,15 @@ extractSigsDbs <- function(
    verbose=F, ...
 ){
 
+   ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
       #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose)
    }
-   df <- getContextsDbs(df, ref.genome=ref.genome, verbose=verbose)
+
+   ## Filter variants
+   df <- subsetSmnvs(df, type='dbs', verbose=verbose)
 
    if(verbose){ message('Initializing SNV signature output vector...') }
    context_counts <- structure(
@@ -98,7 +40,24 @@ extractSigsDbs <- function(
       names=DBS_TYPES$context
    )
 
+   ## Main --------------------------------
    if(nrow(df)!=0){
+      df$context <- paste0(df$ref,'>',df$alt)
+
+      if(verbose){ message('Getting reverse complement contexts...') }
+      df$index <- 1:nrow(df) ## Create index to maintain original row order
+      df_split <- list(
+         'TRUE'=df[df$context %in% DBS_TYPES$context,],
+         'FALSE'=df[!(df$context %in% DBS_TYPES$context),] ## Needs reverse complementing
+      )
+
+      df_split[['FALSE']] <- within(df_split[['FALSE']],{
+         context <- DBS_TYPES$context[ match(context, DBS_TYPES$context_rev_comp) ]
+      })
+
+      df <- rbind(df_split[['FALSE']],df_split[['TRUE']]); rm(df_split)
+      df <- df[order(df$index),]; df$index <- NULL ## Restore original row order
+
       ## Check for weird nucleotides
       which_weird_nt <- sort(unique(c(
          grep('[^ACTG>]',df$substitution),
@@ -119,6 +78,7 @@ extractSigsDbs <- function(
       context_counts[names(tab)] <- tab
    }
 
+   ## Output --------------------------------
    if(output == 'contexts'){
       if(verbose){ message('Returning DBS context counts...') }
       out <- as.matrix(context_counts)
