@@ -13,12 +13,16 @@
 #' fitToSignatures() is however prone to overfitting. When method=='strict', this is solved by
 #' removing the signature with the lowest contribution and least-squares fitting is repeated. This
 #' is done in an iterative fashion. Each time the cosine distance between the original and
-#' reconstructed profile is calculated. Iterations are stopped when cosine distance > max/delta. The
+#' reconstructed profile is calculated. Iterations are stopped when cosine distance > max.delta. The
 #' second-last set of signatures is then returned.
 #'
+#' fitToSignaturesFast() is a wrapper for NNLM::nnlm() and only performs the least-squares fitting
+#'
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
-#' the mutation contexts and the columns are  the mutational signatures.
+#' the mutation contexts and the columns are the mutational signatures.
 #' @param mut.contexts A vector of mutation contexts for fitting
+#' @param method Can be 'lsq' or 'strict'. See description
+#' @param max.delta See description.
 #' @param verbose Show messages?
 #'
 #' @return If vector is provided to mut.contexts, a vector returned containing the the absolute
@@ -30,6 +34,52 @@ fitToSignatures <- function (mut.context.counts, ...) {
    UseMethod("fitToSignatures", mut.context.counts)
 }
 
+####################################################################################################
+#' @rdname fitToSignatures
+fitToSignaturesFast <- function(mut.context.counts, signature.profiles, verbose=F){
+   # if(F){
+   #    mut.context.counts=contexts$indel
+   #    mut.context.counts=contexts$indel[1,]
+   #    signature.profiles=INDEL_SIGNATURE_PROFILES
+   # }
+
+   ## Checks --------------------------------
+   profile_nrow <- nrow(signature.profiles)
+   profile_ncol <- ncol(signature.profiles)
+
+   if(is.vector(mut.context.counts)){
+      mut.context.counts <- matrix(
+         mut.context.counts, ncol=1,
+         dimnames=list(names(mut.context.counts))
+      )
+      contexts_length <- length(mut.context.counts)
+
+   } else {
+      mut.context.counts <- t(as.matrix(mut.context.counts))
+      contexts_length <- nrow(mut.context.counts)
+   }
+
+   if(!is.numeric(mut.context.counts)){ stop(mut.context.counts) }
+
+   if(profile_nrow != contexts_length){
+      stop(
+         "No. of contexts in mut.context.counts (",contexts_length,")",
+         "does not match no. of contexts in signature.profiles (",profile_nrow,")"
+      )
+   }
+
+   if( !(identical(rownames(mut.context.counts), rownames(signature.profiles))) ){
+      warning("Context names of mut.context.counts and signature.profiles do not match. Fitting may not be correct.")
+   }
+
+   ## Main --------------------------------
+   sigs <- NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients
+   sigs <- t(sigs)
+
+   return(sigs)
+}
+
+####################################################################################################
 ## Machine epsilon (floating-point relative accuracy). Adapted from eps() function from pracma R package
 EPS <- (function(x=1.0) {
    x <- max(abs(x))
@@ -41,8 +91,71 @@ EPS <- (function(x=1.0) {
    }
 })()
 
+#' Non-negative least squares fitting
+#'
+#' @description Ripped least squares fitting function from pracma
+#'
+#' @param mut.context.counts A numeric vector of mutation context counts
+#' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
+#' the mutation contexts and the columns are the mutational signatures.
+#'
+#' @return A vector returned containing the the absolute contribution of each signature
+#' @export
+#'
+lsqnonneg <- function(mut.context.counts, signature.profiles){
+   m <- nrow(signature.profiles)
+   n <- ncol(signature.profiles)
 
-cosSim <- function(x, y) { x %*% y / (sqrt(x %*% x) * sqrt(y %*% y)) }
+   if (m != length(mut.context.counts)){
+      stop(
+         "No. of contexts in mut.context.counts (",length(mut.context.counts),")",
+         "does not match no. of contexts in signature.profiles (",m,")"
+      )
+   }
+
+   tol <- 10 * EPS * norm(signature.profiles, type = "2") * (max(n, m) + 1)
+
+   x <- rep(0, n)             # initial point
+   P <- logical(n); Z <- !P   # non-active / active columns
+
+   resid <- mut.context.counts - signature.profiles %*% x
+   w <- t(signature.profiles) %*% resid
+   wz <- numeric(n)
+
+   # iteration parameters
+   outeriter <- 0; it <- 0
+   itmax <- 3 * n; exitflag <- 1
+
+   while (any(Z) && any(w[Z] > tol)) {
+      outeriter <- outeriter + 1
+      z <- numeric(n)
+      wz <- rep(-Inf, n)
+      wz[Z] <- w[Z]
+      im <- which.max(wz)
+      P[im] <- TRUE; Z[im] <- FALSE
+      z[P] <- qr.solve(signature.profiles[, P], mut.context.counts)
+
+      while (any(z[P] <= 0)) {
+         it <- it + 1
+         if (it > itmax) stop("Iteration count exceeded.")
+
+         Q <- (z <= 0) & P
+         alpha <- min(x[Q] / (x[Q] - z[Q]))
+         x <- x + alpha*(z - x)
+         Z <- ((abs(x) < tol) & P) | Z
+         P <- !Z
+         z <- numeric(n)
+         z[P] <- qr.solve(signature.profiles[, P], mut.context.counts)
+      }
+      x <- z
+      resid <- mut.context.counts - signature.profiles %*% x
+      w <- t(signature.profiles) %*% resid
+   }
+
+   names(x) <- colnames(signature.profiles)
+
+   return(x)
+}
 
 #' @rdname fitToSignatures
 #' @method fitToSignatures default
@@ -51,67 +164,11 @@ fitToSignatures.default <- function(
    method='lsq', max.delta=0.01,
    verbose=F
 ){
-   if(F){
-      signature.profiles=SBS_SIGNATURE_PROFILES_V3
-      method='strict'
-      max.delta=0.01
-   }
-
-   ## Ripped least squares fitting function from pracma
-   lsqnonneg <- function(mut.context.counts, signature.profiles){
-      m <- nrow(signature.profiles)
-      n <- ncol(signature.profiles)
-
-      if (m != length(mut.context.counts)){
-         stop(
-            "No. of contexts in mut.context.counts (",ncol(mut.context.counts),")",
-            "does not match no. of contexts in signature.profiles (",m,")"
-         )
-      }
-
-      tol <- 10 * EPS * norm(signature.profiles, type = "2") * (max(n, m) + 1)
-
-      x <- rep(0, n)             # initial point
-      P <- logical(n); Z <- !P   # non-active / active columns
-
-      resid <- mut.context.counts - signature.profiles %*% x
-      w <- t(signature.profiles) %*% resid
-      wz <- numeric(n)
-
-      # iteration parameters
-      outeriter <- 0; it <- 0
-      itmax <- 3 * n; exitflag <- 1
-
-      while (any(Z) && any(w[Z] > tol)) {
-         outeriter <- outeriter + 1
-         z <- numeric(n)
-         wz <- rep(-Inf, n)
-         wz[Z] <- w[Z]
-         im <- which.max(wz)
-         P[im] <- TRUE; Z[im] <- FALSE
-         z[P] <- qr.solve(signature.profiles[, P], mut.context.counts)
-
-         while (any(z[P] <= 0)) {
-            it <- it + 1
-            if (it > itmax) stop("Iteration count exceeded.")
-
-            Q <- (z <= 0) & P
-            alpha <- min(x[Q] / (x[Q] - z[Q]))
-            x <- x + alpha*(z - x)
-            Z <- ((abs(x) < tol) & P) | Z
-            P <- !Z
-            z <- numeric(n)
-            z[P] <- qr.solve(signature.profiles[, P], mut.context.counts)
-         }
-         x <- z
-         resid <- mut.context.counts - signature.profiles %*% x
-         w <- t(signature.profiles) %*% resid
-      }
-
-      names(x) <- colnames(signature.profiles)
-
-      return(x)
-   }
+   # if(F){
+   #    signature.profiles=SBS_SIGNATURE_PROFILES_V3
+   #    method='strict'
+   #    max.delta=0.01
+   # }
 
    ## Different fitting methods
    if(method=='lsq'){
@@ -146,6 +203,7 @@ fitToSignatures.default <- function(
          #rbind(v1,v2)
 
          ## Calculate difference in cosine similarity
+         cosSim <- function(x, y) { x %*% y / (sqrt(x %*% x) * sqrt(y %*% y)) }
          cossim2 <- cosSim(v1,v2)[1]
          delta <- cossim1 - cossim2
          #print(paste0(cossim2,'_',delta))
