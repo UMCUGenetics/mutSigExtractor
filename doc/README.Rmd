@@ -13,14 +13,12 @@ nucleotides
 * **Indel**: Includes indels within repeat regions, indels with flanking 
 microhomology; and other indels. Each category is further stratified by the repeat unit length, 
 the number of bases in the indel sequence that are homologous, and the indel sequence length, 
-respectively.
+respectively. Alternatively, the PCAWG indel contexts can also be extracted
 * **SV**: structural variants stratified by type (deletions, duplications, inversions, 
 translocations) and length (0 to >10Mb)
 
-Signatures can also be extracted from these contexts for SNVs and DBSs (COSMIC or PCAWG), as well 
-as for SVs ([Nik-Zainal et al. 2016](https://www.nature.com/articles/nature17676)). Indel signatures 
-(from PCAWG) are currently unsupported as the indel contexts extracted are not the same as from 
-PCAWG.
+Signatures can also be extracted from these contexts for SNVs, indels, DBSs (COSMIC/PCAWG), as 
+well as for SVs ([Nik-Zainal et al. 2016](https://www.nature.com/articles/nature17676)).
 
 ## Installation
 mutSigExtractor requires some bioconductor packages to first be installed.
@@ -45,9 +43,10 @@ The `COLO829v003T.purple.somatic.vcf.gz` and `COLO829v003T.purple.sv.vcf.gz` fil
 will be used to demonstrate how to use mutSigExtractor.
 
 ```{r message=FALSE, warning=FALSE, results="hide", echo=FALSE}
-library(mutSigExtractor)
-vcf_snv <- '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/doc/vcf/COLO829v003T.purple.somatic.vcf.gz'
-vcf_sv <- '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/doc/vcf/COLO829v003T.purple.sv.vcf.gz'
+pkg_dir <- '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/'
+devtools::load_all(pkg_dir)
+vcf_snv <- paste0(pkg_dir, '/doc/vcf/COLO829v003T.purple.somatic.vcf.gz')
+vcf_sv <- paste0(pkg_dir,'/doc/vcf/COLO829v003T.purple.sv.vcf.gz')
 ```
 
 ```{r eval=FALSE, error=FALSE}
@@ -126,12 +125,21 @@ contexts_dbs <- extractSigsDbs(vcf.file=vcf_snv, vcf.filter='PASS', output='cont
 head(contexts_dbs)
 ```
 #### Indels
-For indels, extraction of signatures is currently unsupported. Therefore, `extractSigsIndel()` does
-not have the `output` argument.
+For indels, `extractSigsIndel()` defaults to `method='CHORD'` which is used by Classifier of 
+HOmologous Recombination Deficiency (CHORD). When `method='CHORD'`, contexts are always extracted
+(i.e. no `output` argument).
 ```{r message=FALSE, warning=FALSE}
 contexts_indel <- extractSigsIndel(vcf.file=vcf_snv, vcf.filter='PASS')
 head(contexts_indel)
 ```
+
+However, the PCAWG indel contexts can also be extracted by setting `method='PCAWG'`. Here, `output`
+can be `'signatures'` to directly extract the PCAWG indel signatures.
+```{r message=FALSE, warning=FALSE}
+contexts_indel <- extractSigsIndel(vcf.file=vcf_snv, vcf.filter='PASS', method='PCAWG', output='contexts')
+head(contexts_indel)
+```
+
 #### SVs
 SV vcf files generally do not adhere to one standard. `extractSigsSv()` currently supports SV vcf
 parsing of GRIDSS (conforms to vcf spec 4.2) and Manta vcfs. You can specify the vcf type 
@@ -182,6 +190,7 @@ Below is a summary of the signature profiles pre-loaded within mutSigExtractor
 
 * `SBS_SIGNATURE_PROFILES_V2`: Original 30 SNV signatures
 * `SBS_SIGNATURE_PROFILES_V3`: PCAWG SNV signatures
+* `INDEL_SIGNATURE_PROFILES`: PCAWG indel signatures
 * `DBS_SIGNATURE_PROFILES`: PCAWG DBS signatures
 * `SV_SIGNATURE_PROFILES`: SV signatures from [Nik-Zainal et al. 2016](https://www.nature.com/articles/nature17676) 
 with clustered SV information removed

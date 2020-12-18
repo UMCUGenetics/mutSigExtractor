@@ -13,15 +13,14 @@ vcf files. Extraction can be performed for the following mutation types:
     flanking microhomology; and other indels. Each category is further
     stratified by the repeat unit length, the number of bases in the
     indel sequence that are homologous, and the indel sequence length,
-    respectively.
+    respectively. Alternatively, the PCAWG indel contexts can also be
+    extracted
   - **SV**: structural variants stratified by type (deletions,
     duplications, inversions, translocations) and length (0 to \>10Mb)
 
-Signatures can also be extracted from these contexts for SNVs and DBSs
-(COSMIC or PCAWG), as well as for SVs ([Nik-Zainal et
-al. 2016](https://www.nature.com/articles/nature17676)). Indel
-signatures (from PCAWG) are currently unsupported as the indel contexts
-extracted are not the same as from PCAWG.
+Signatures can also be extracted from these contexts for SNVs, indels,
+DBSs (COSMIC/PCAWG), as well as for SVs ([Nik-Zainal et
+al. 2016](https://www.nature.com/articles/nature17676)).
 
 ## Installation
 
@@ -175,8 +174,10 @@ head(contexts_dbs)
 
 #### Indels
 
-For indels, extraction of signatures is currently unsupported.
-Therefore, `extractSigsIndel()` does not have the `output` argument.
+For indels, `extractSigsIndel()` defaults to `method='CHORD'` which is
+used by Classifier of HOmologous Recombination Deficiency (CHORD). When
+`method='CHORD'`, contexts are always extracted (i.e. no `output`
+argument).
 
 ``` r
 contexts_indel <- extractSigsIndel(vcf.file=vcf_snv, vcf.filter='PASS')
@@ -190,6 +191,23 @@ head(contexts_indel)
     ## del.rep.len.4                                 13
     ## del.rep.len.5                                 24
     ## ins.rep.len.1                                121
+
+However, the PCAWG indel contexts can also be extracted by setting
+`method='PCAWG'`. Here, `output` can be `'signatures'` to directly
+extract the PCAWG indel signatures.
+
+``` r
+contexts_indel <- extractSigsIndel(vcf.file=vcf_snv, vcf.filter='PASS', method='PCAWG', output='contexts')
+head(contexts_indel)
+```
+
+    ##            COLO829v003T.purple.somatic.vcf.gz
+    ## del.1.C.1                                  25
+    ## del.1.C.2                                  20
+    ## del.1.C.3                                   8
+    ## del.1.C.4                                   6
+    ## del.1.C.5                                   1
+    ## del.1.C.6+                                  4
 
 #### SVs
 
@@ -257,6 +275,7 @@ mutSigExtractor
 
   - `SBS_SIGNATURE_PROFILES_V2`: Original 30 SNV signatures
   - `SBS_SIGNATURE_PROFILES_V3`: PCAWG SNV signatures
+  - `INDEL_SIGNATURE_PROFILES`: PCAWG indel signatures
   - `DBS_SIGNATURE_PROFILES`: PCAWG DBS signatures
   - `SV_SIGNATURE_PROFILES`: SV signatures from [Nik-Zainal et
     al. 2016](https://www.nature.com/articles/nature17676) with
