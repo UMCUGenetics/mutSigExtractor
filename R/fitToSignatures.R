@@ -4,26 +4,30 @@
 #' @rdname fitToSignatures
 #'
 #' @description Calculate the contribution of each mutational signature in a sample, given a vector
-#' of mutation contexts. This function is an adaptation of the lsqnonneg() function in the pracma
-#' R package.
+#' of mutation contexts. This is done by least-squares fitting, i.e. find a linear non-negative
+#' combination of mutation signatures that optimally reconstructs the mutation matrix
 #'
-#' When method=='lsq' fitToSignatures() simplify performs the least-squares fitting, i.e. find a
-#' linear non-negative combination of mutation signatures that reconstructs the mutation matrix
+#' fitToSignatures() is a slow R implementation of least-squares fitting based on the lsqnonneg()
+#' function in the pracma from the R package.
 #'
-#' fitToSignatures() is however prone to overfitting. When method=='strict', this is solved by
-#' removing the signature with the lowest contribution and least-squares fitting is repeated. This
-#' is done in an iterative fashion. Each time the cosine distance between the original and
-#' reconstructed profile is calculated. Iterations are stopped when cosine distance > max.delta. The
-#' second-last set of signatures is then returned.
+#' fitToSignaturesFast() is a wrapper for NNLM::nnlm(), a least-squares fitting function implemented
+#' in C++.
 #'
-#' fitToSignaturesFast() is a wrapper for NNLM::nnlm() and only performs the least-squares fitting
+#' Only performing least-squares fitting is however potentially prone to overfitting.
+#' fitToSignaturesFastStrict() tries to solve this problem by performing an initial fit,
+#' then iteratively removing the signature with the lowest contribution and with fitting then
+#' repeated. Each time the cosine distance between the original and reconstructed mutation context
+#' profile is calculated. Iterations are stopped when cosine distance > max.delta. The second-last
+#' set of signatures is then returned.
 #'
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are the mutational signatures.
 #' @param mut.contexts A vector of mutation contexts for fitting
-#' @param method Can be 'lsq' or 'strict'. See description
 #' @param max.delta See description.
-#' @param verbose Show messages?
+#' @param detailed.output Only for fitToSignaturesFastStrict(). Also return results from the
+#' iterative fitting? Includes: cosine similarity between the original and reconstructed mutation
+#' context; signatures removed at each iteration. Useful for plotting fitting performance.
+#' @param verbose Show progress messages?
 #'
 #' @return If vector is provided to mut.contexts, a vector returned containing the the absolute
 #' contribution of each signature (i.e. the number of mutations contributing to each mutational
@@ -34,7 +38,7 @@ fitToSignatures <- function (mut.context.counts, ...) {
    UseMethod("fitToSignatures", mut.context.counts)
 }
 
-####################################################################################################
+## Fast implementations via NNLM ###################################################################
 #' @rdname fitToSignatures
 fitToSignaturesFast <- function(mut.context.counts, signature.profiles, verbose=F){
    # if(F){
@@ -44,27 +48,17 @@ fitToSignaturesFast <- function(mut.context.counts, signature.profiles, verbose=
    # }
 
    ## Checks --------------------------------
-   profile_nrow <- nrow(signature.profiles)
-   profile_ncol <- ncol(signature.profiles)
+   if(is.vector(mut.context.counts)){ mut.context.counts <- t(mut.context.counts) }
+   mut.context.counts <- as.matrix(mut.context.counts)
+   if(!is.numeric(mut.context.counts)){ stop('mut.context.counts must be a numeric matrix or dataframe') }
 
-   if(is.vector(mut.context.counts)){
-      mut.context.counts <- matrix(
-         mut.context.counts, ncol=1,
-         dimnames=list(names(mut.context.counts))
-      )
-      contexts_length <- length(mut.context.counts)
+   signature.profiles <- as.matrix(signature.profiles)
+   if(!is.numeric(mut.context.counts)){ stop('signature.profiles must be a numeric matrix or dataframe') }
 
-   } else {
-      mut.context.counts <- t(as.matrix(mut.context.counts))
-      contexts_length <- nrow(mut.context.counts)
-   }
-
-   if(!is.numeric(mut.context.counts)){ stop(mut.context.counts) }
-
-   if(profile_nrow != contexts_length){
+   if( nrow(mut.context.counts)!=nrow(signature.profiles) ){
       stop(
-         "No. of contexts in mut.context.counts (",contexts_length,")",
-         "does not match no. of contexts in signature.profiles (",profile_nrow,")"
+         "No. of contexts in mut.context.counts (",nrow(mut.context.counts),")",
+         "does not match no. of contexts in signature.profiles (",nrow(signature.profiles),")"
       )
    }
 
@@ -79,7 +73,160 @@ fitToSignaturesFast <- function(mut.context.counts, signature.profiles, verbose=
    return(sigs)
 }
 
-####################################################################################################
+#' @rdname fitToSignatures
+fitToSignaturesFastStrict <- function(
+   mut.context.counts, signature.profiles, max.delta=0.004,
+   detailed.output=F, verbose=F
+){
+
+   if(F){
+      mut.context.counts=contexts$snv[1:2,]
+      signature.profiles=SBS_SIGNATURE_PROFILES_V3
+      max.delta=0.004
+      verbose=T
+   }
+
+   ## Checks --------------------------------
+   require(NNLM)
+
+   if(is.vector(mut.context.counts)){ mut.context.counts <- t(mut.context.counts) }
+   mut.context.counts <- as.matrix(mut.context.counts)
+   if(!is.numeric(mut.context.counts)){ stop('mut.context.counts must be a numeric matrix or dataframe') }
+
+   signature.profiles <- as.matrix(signature.profiles)
+   if(!is.numeric(mut.context.counts)){ stop('signature.profiles must be a numeric matrix or dataframe') }
+
+   if( nrow(mut.context.counts)!=nrow(signature.profiles) ){
+      stop(
+         "No. of contexts in mut.context.counts (",nrow(mut.context.counts),")",
+         "does not match no. of contexts in signature.profiles (",nrow(signature.profiles),")"
+      )
+   }
+
+   if( !(identical(rownames(mut.context.counts), rownames(signature.profiles))) ){
+      warning("Context names of mut.context.counts and signature.profiles do not match. Fitting may not be correct.")
+   }
+
+   ## --------------------------------
+   if(verbose){ message('Performing first fit...') }
+
+   mut.context.counts <- t(mut.context.counts)
+   fit_init <- nnlm(signature.profiles, mut.context.counts)$coefficients
+   sig_pres <- rowSums(fit_init) != 0
+   my_signatures_total <- signature.profiles[, sig_pres, drop=FALSE]
+
+   ## --------------------------------
+   if(verbose){ message('Performing signature selection per sample...') }
+
+   cosSim <- function(x, y) { sum(x*y)/sqrt(sum(x^2)*sum(y^2)) }
+
+   n_sigs <- ncol(my_signatures_total)
+   n_samples <- ncol(mut.context.counts)
+
+   l_contribs <- list()
+   l_sims <- list()
+   l_removed_sigs <- list()
+
+   if(verbose==2){ pb <- txtProgressBar(max=n_samples, style=3) }
+
+   for (i in 1:n_samples) {
+      #i=1
+
+      if(verbose==1){ message(' [',i,'/',n_samples,'] ', colnames(mut.context.counts)[i]) }
+      if(verbose==2){ setTxtProgressBar(pb, i) }
+
+      my_signatures <- my_signatures_total
+      mut_mat_sample <- mut.context.counts[, i, drop=FALSE]
+
+      ## Fit again
+      fit_res <- list()
+      fit_res$contribution <- nnlm(my_signatures, mut_mat_sample)$coefficients
+      fit_res$reconstructed <- my_signatures %*% fit_res$contribution
+
+      sim <- cosSim(fit_res$reconstructed, mut_mat_sample)
+
+      ## Keep track of the cosine similarity and which signatures are removed.
+      sims <- rep(NA, n_sigs); sims[[1]] <- sim
+      removed_sigs <- rep(NA, n_sigs)
+
+      ## Sequentially remove the signature with the lowest contribution
+      for (j in 2:n_sigs) {
+         #j=2
+
+         # Remove signature with the weakest relative contribution
+         contri_order <- order(fit_res$contribution[,1] / sum(fit_res$contribution[,1]))
+         weakest_sig_index <- contri_order[1]
+         weakest_sig <- colnames(my_signatures)[weakest_sig_index]
+         removed_sigs[[j]] <- weakest_sig
+         signatures_sel <- my_signatures[, -weakest_sig_index, drop=FALSE]
+
+         # Fit with new signature selection
+         fit_res <- list()
+         fit_res$contribution <- nnlm(signatures_sel, mut_mat_sample)$coefficients
+         fit_res$reconstructed <- signatures_sel %*% fit_res$contribution
+
+         sim_new <- cosSim(fit_res$reconstructed, mut_mat_sample)
+
+         if(is.na(sim_new)){
+            sim_new <- 0
+            # if(verbose){
+            #    warning("New similarity between the original and the reconstructed
+            #             spectra after the removal of a signature was NaN.
+            #             It has been converted into a 0.
+            #             This happened with the following fit_res:")
+            #    print(fit_res)
+            # }
+         }
+         sims[[j]] <- sim_new
+
+         # Check if the loss in cosine similarity between the original vs reconstructed after removing the signature is below the cutoff.
+         if(sim-sim_new <= max.delta){
+            my_signatures <- signatures_sel
+            sim <- sim_new
+         } else {
+            break
+         }
+      }
+
+      ## Fit with the final set of signatures
+      ## Fill in 0 for absent signatures
+      contrib_pre <- NNLM::nnlm(my_signatures, mut_mat_sample)$coefficients[,1]
+      contrib <- structure(
+         rep(0, ncol(signature.profiles)),
+         names=colnames(signature.profiles)
+      )
+      contrib[names(contrib_pre)] <- contrib_pre
+
+      l_contribs[[i]] <- contrib
+      l_sims[[i]] <- sims
+      l_removed_sigs[[i]] <- removed_sigs
+   }
+
+   ## --------------------------------
+   if(verbose==2){ message('\n') }
+   if(verbose){ message('Returning output...') }
+
+   m_contribs <- do.call(rbind, l_contribs)
+   rownames(m_contribs) <- colnames(mut.context.counts)
+
+   if(!detailed.output){ return(m_contribs) }
+
+   m_sim <- do.call(rbind, l_sims)
+   rownames(m_sim) <- colnames(mut.context.counts)
+
+   m_removed_sigs <- do.call(rbind, l_removed_sigs)
+   rownames(m_removed_sigs) <- colnames(mut.context.counts)
+
+   list(
+      sig_contrib=m_contribs,
+      removed_sigs_common=names(sig_pres)[ !sig_pres ],
+      removed_sigs_iter=m_removed_sigs,
+      cos_sims=m_sim
+   )
+}
+
+
+## Slow R implementations ##########################################################################
 ## Machine epsilon (floating-point relative accuracy). Adapted from eps() function from pracma R package
 EPS <- (function(x=1.0) {
    x <- max(abs(x))
@@ -100,7 +247,6 @@ EPS <- (function(x=1.0) {
 #' the mutation contexts and the columns are the mutational signatures.
 #'
 #' @return A vector returned containing the the absolute contribution of each signature
-#' @export
 #'
 lsqnonneg <- function(mut.context.counts, signature.profiles){
    m <- nrow(signature.profiles)
@@ -170,54 +316,7 @@ fitToSignatures.default <- function(
    #    max.delta=0.01
    # }
 
-   ## Different fitting methods
-   if(method=='lsq'){
-      out <- lsqnonneg(mut.context.counts, signature.profiles)
-   } else if(method=='strict'){
-      v_init <- lsqnonneg(mut.context.counts, signature.profiles)
-
-      v_template <- structure(
-         rep(0,ncol(signature.profiles)),
-         names=colnames(signature.profiles)
-      )
-
-      v1 <- v_init
-      cossim1 <- 1
-      for(i in 1:(ncol(signature.profiles)-1)){
-         ## Remove the lowest contributing signature and signatures with 0 contribution
-         v1_modified <- v1
-         v1_modified[v1_modified==0] <- Inf ## Ensures which.min() skips 0 values
-
-         excl_indexes <- unique(c(
-            which.min(v1_modified),
-            which(v1==0)
-         ))
-         signature_profiles_2 <- signature.profiles[,-excl_indexes, drop=F]
-
-         if(ncol(signature_profiles_2)==0){ break } ## Exception when v1 only has contribution in one signature
-
-         ## Do fit again
-         v2 <- v_template ## Using the template ensures v2 has the same contexts as v1
-         v2_pre <- lsqnonneg(mut.context.counts, signature_profiles_2)
-         v2[names(v2_pre)] <- v2_pre
-         #rbind(v1,v2)
-
-         ## Calculate difference in cosine similarity
-         cosSim <- function(x, y) { x %*% y / (sqrt(x %*% x) * sqrt(y %*% y)) }
-         cossim2 <- cosSim(v1,v2)[1]
-         delta <- cossim1 - cossim2
-         #print(paste0(cossim2,'_',delta))
-         if(delta >= max.delta){ break }
-
-         v1 <- v2
-         cossim1 <- cossim2
-      }
-
-      out <- v1
-   } else {
-      stop("Method must be 'lsq' or 'strict'")
-   }
-
+   out <- lsqnonneg(mut.context.counts, signature.profiles)
    names(out) <- colnames(signature.profiles)
    return(out)
 }
