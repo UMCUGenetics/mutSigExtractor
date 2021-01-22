@@ -5,7 +5,7 @@
 \alias{SV_SIGNATURE_PROFILES}
 \title{SV signature profiles}
 \format{
-An object of class \code{matrix} with 16 rows and 6 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 16 rows and 6 columns.
 }
 \usage{
 data(SV_SIGNATURE_PROFILES)

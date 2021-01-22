@@ -5,7 +5,7 @@
 \alias{DBS_SIGNATURE_PROFILES}
 \title{DBS signature profiles}
 \format{
-An object of class \code{matrix} with 78 rows and 11 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 78 rows and 11 columns.
 }
 \usage{
 data(DBS_SIGNATURE_PROFILES)

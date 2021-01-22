@@ -5,7 +5,7 @@
 \alias{INDEL_SIGNATURE_PROFILES}
 \title{Indel signature profiles}
 \format{
-An object of class \code{matrix} with 83 rows and 18 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 83 rows and 18 columns.
 }
 \usage{
 data(INDEL_SIGNATURE_PROFILES)
