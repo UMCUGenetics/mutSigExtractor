@@ -48,6 +48,8 @@ fitToSignaturesFast <- function(mut.context.counts, signature.profiles, verbose=
    # }
 
    ## Checks --------------------------------
+   require(NNLM)
+
    if(is.vector(mut.context.counts)){ mut.context.counts <- t(mut.context.counts) }
    mut.context.counts <- as.matrix(mut.context.counts)
    if(!is.numeric(mut.context.counts)){ stop('mut.context.counts must be a numeric matrix or dataframe') }
@@ -55,19 +57,19 @@ fitToSignaturesFast <- function(mut.context.counts, signature.profiles, verbose=
    signature.profiles <- as.matrix(signature.profiles)
    if(!is.numeric(mut.context.counts)){ stop('signature.profiles must be a numeric matrix or dataframe') }
 
-   if( nrow(mut.context.counts)!=nrow(signature.profiles) ){
+   if( ncol(mut.context.counts)!=nrow(signature.profiles) ){
       stop(
-         "No. of contexts in mut.context.counts (",nrow(mut.context.counts),")",
+         "No. of contexts in mut.context.counts (",nrow(mut.context.counts),") ",
          "does not match no. of contexts in signature.profiles (",nrow(signature.profiles),")"
       )
    }
 
-   if( !(identical(rownames(mut.context.counts), rownames(signature.profiles))) ){
+   if( !(identical(colnames(mut.context.counts), rownames(signature.profiles))) ){
       warning("Context names of mut.context.counts and signature.profiles do not match. Fitting may not be correct.")
    }
 
    ## Main --------------------------------
-   sigs <- NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients
+   sigs <- nnlm(signature.profiles, t(mut.context.counts))$coefficients
    sigs <- t(sigs)
 
    return(sigs)
@@ -80,7 +82,7 @@ fitToSignaturesFastStrict <- function(
 ){
 
    if(F){
-      mut.context.counts=contexts$snv[1:2,]
+      mut.context.counts=contexts$snv[c('XXXXXXXX'),]
       signature.profiles=SBS_SIGNATURE_PROFILES_V3
       max.delta=0.004
       verbose=T
@@ -96,14 +98,14 @@ fitToSignaturesFastStrict <- function(
    signature.profiles <- as.matrix(signature.profiles)
    if(!is.numeric(mut.context.counts)){ stop('signature.profiles must be a numeric matrix or dataframe') }
 
-   if( nrow(mut.context.counts)!=nrow(signature.profiles) ){
+   if( ncol(mut.context.counts)!=nrow(signature.profiles) ){
       stop(
-         "No. of contexts in mut.context.counts (",nrow(mut.context.counts),")",
+         "No. of contexts in mut.context.counts (",nrow(mut.context.counts),") ",
          "does not match no. of contexts in signature.profiles (",nrow(signature.profiles),")"
       )
    }
 
-   if( !(identical(rownames(mut.context.counts), rownames(signature.profiles))) ){
+   if( !(identical(colnames(mut.context.counts), rownames(signature.profiles))) ){
       warning("Context names of mut.context.counts and signature.profiles do not match. Fitting may not be correct.")
    }
 
@@ -138,16 +140,29 @@ fitToSignaturesFastStrict <- function(
       my_signatures <- my_signatures_total
       mut_mat_sample <- mut.context.counts[, i, drop=FALSE]
 
+      ## Initialize output vectors
+      ## Keep track of the cosine similarity and which signatures are removed.
+      sims <- rep(NA, n_sigs)
+      removed_sigs <- rep(NA, n_sigs)
+
+      contrib <- structure(
+         rep(0, ncol(signature.profiles)),
+         names=colnames(signature.profiles)
+      )
+      if(sum(mut_mat_sample[,1])==0){
+         l_contribs[[i]] <- contrib
+         l_sims[[i]] <- sims
+         l_removed_sigs[[i]] <- removed_sigs
+         next
+      }
+
       ## Fit again
       fit_res <- list()
       fit_res$contribution <- nnlm(my_signatures, mut_mat_sample)$coefficients
       fit_res$reconstructed <- my_signatures %*% fit_res$contribution
 
-      sim <- cosSim(fit_res$reconstructed, mut_mat_sample)
-
-      ## Keep track of the cosine similarity and which signatures are removed.
-      sims <- rep(NA, n_sigs); sims[[1]] <- sim
-      removed_sigs <- rep(NA, n_sigs)
+      sim <- cosSim(fit_res$reconstructed[,1], mut_mat_sample[,1])
+      sims[[1]] <- sim
 
       ## Sequentially remove the signature with the lowest contribution
       for (j in 2:n_sigs) {
@@ -191,10 +206,6 @@ fitToSignaturesFastStrict <- function(
       ## Fit with the final set of signatures
       ## Fill in 0 for absent signatures
       contrib_pre <- NNLM::nnlm(my_signatures, mut_mat_sample)$coefficients[,1]
-      contrib <- structure(
-         rep(0, ncol(signature.profiles)),
-         names=colnames(signature.profiles)
-      )
       contrib[names(contrib_pre)] <- contrib_pre
 
       l_contribs[[i]] <- contrib
