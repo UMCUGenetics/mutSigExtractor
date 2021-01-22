@@ -22,7 +22,8 @@
 #'
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are the mutational signatures.
-#' @param mut.contexts A vector of mutation contexts for fitting
+#' @param mut.contexts A vector of mutation contexts, or a matrix where rows are samples and columns
+#' are mutation contexts
 #' @param max.delta See description.
 #' @param detailed.output Only for fitToSignaturesFastStrict(). Also return results from the
 #' iterative fitting? Includes: cosine similarity between the original and reconstructed mutation
@@ -38,7 +39,7 @@ fitToSignatures <- function (mut.context.counts, ...) {
    UseMethod("fitToSignatures", mut.context.counts)
 }
 
-## Fast implementations via NNLM ###################################################################
+## Fast implementation via NNLM ###################################################################
 #' @rdname fitToSignatures
 fitToSignaturesFast <- function(mut.context.counts, signature.profiles, verbose=F){
    # if(F){
@@ -237,7 +238,7 @@ fitToSignaturesFastStrict <- function(
 }
 
 
-## Slow R implementations ##########################################################################
+## Slow R implementation ##########################################################################
 ## Machine epsilon (floating-point relative accuracy). Adapted from eps() function from pracma R package
 EPS <- (function(x=1.0) {
    x <- max(abs(x))

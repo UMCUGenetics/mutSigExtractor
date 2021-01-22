@@ -45,7 +45,8 @@ the mutation contexts and the columns are the mutational signatures.}
 iterative fitting? Includes: cosine similarity between the original and reconstructed mutation
 context; signatures removed at each iteration. Useful for plotting fitting performance.}
 
-\item{mut.contexts}{A vector of mutation contexts for fitting}
+\item{mut.contexts}{A vector of mutation contexts, or a matrix where rows are samples and columns
+are mutation contexts}
 }
 \value{
 If vector is provided to mut.contexts, a vector returned containing the the absolute
