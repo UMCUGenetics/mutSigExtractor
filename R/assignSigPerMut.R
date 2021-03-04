@@ -34,7 +34,7 @@ assignSigPerMut <- function(
    signature.profiles=NULL,
    args.extract.sigs=list(vcf.filter='PASS'),
    fit.method='strict', args.fit=NULL,
-   verbose=T
+   verbose=F
 ){
 
    if(F){
@@ -120,7 +120,7 @@ assignSigPerMut <- function(
    #sig_profiles <- sig_profiles / colSums(sig_profiles) ## Force total prob to be 1
 
    ## Force context names and order to be the same in sig profile matrix
-   if(!all(context_counts %in% rownames(sig_profiles))){
+   if(!all(names(context_counts) %in% rownames(sig_profiles))){
       stop('\nExtracted contexts do not match `rownames(signature.profiles)`\nMaybe the wrong `mode` was selected?')
    }
    sig_profiles <- sig_profiles[names(context_counts),]
