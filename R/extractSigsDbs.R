@@ -1,13 +1,15 @@
 #' Extract doublet substitution signatures
 #'
-#' @description Will output a 1-column matrix containing: (if output = 'signatures') the absolute
+#' @description Will output a 1-column matrix containing: (if output=='signatures') the absolute
 #' signature contributions (i.e. the number of mutations contributing to each mutational signature),
-#' or (if output = 'contexts') the mutation contexts.
+#' or (if output=='contexts') the mutation contexts, or (if output=='df') a dataframe with each
+#' mutation annotated by context
 #'
 #' @param vcf.file Path to the vcf file
-#' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
-#' @param output Output the absolute signature contributions (default, 'signatures'), or the
-#' 96-trinucleotide contexts ('contexts')
+#' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to
+#' vcf.file
+#' @param output Output the absolute signature contributions (default, 'signatures'), the
+#' DBS contexts ('contexts'), or an annotated bed-like dataframe ('df')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
 #' this. If none is provided, the basename of the vcf file will be used.
 #' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
@@ -73,17 +75,23 @@ extractSigsDbs <- function(
          df <- df[-which_weird_nt,]
       }
 
-      if(verbose){ message('Counting DBS context occurrences...') }
+      if(verbose){ message('Counting context occurrences...') }
+      df$context <- factor(df$context, names(context_counts))
       tab <- table(df$context)
       context_counts[names(tab)] <- tab
    }
 
    ## Output --------------------------------
-   if(output == 'contexts'){
+   if(output=='df'){
+      if(verbose){ message('Returning annotated bed-like dataframe...') }
+      return(df)
+   }
+
+   if(output=='contexts'){
       if(verbose){ message('Returning DBS context counts...') }
       out <- as.matrix(context_counts)
 
-   } else if(output == 'signatures'){
+   } else if(output=='signatures'){
       if(verbose){ message('Returning DBS signature contributions...') }
       ## Least squares fitting
       out <- fitToSignatures(context_counts, signature.profiles)

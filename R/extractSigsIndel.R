@@ -15,8 +15,8 @@
 #' @param method Can be 'CHORD' or 'PCAWG'. Indicates the indel context type to extract.
 #' @param vcf.file Path to the vcf file
 #' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
-#' @param output Output the absolute signature contributions (default, 'signatures'), or indel
-#' contexts ('contexts')
+#' @param output Output the absolute signature contributions (default, 'signatures'), indel
+#' contexts ('contexts'), or an annotated bed-like dataframe ('df')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
 #'   this. If none is provided, the basename of the vcf file will be used.
 #' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
@@ -34,7 +34,6 @@
 #' @param keep.indel.types A character vector of indel types to keep. Defaults to 'del' and 'ins' to
 #' filter out MNVs (variants where REF and ALT length >= 2). MNV names are: 'mnv_neutral'
 #' (REF lenth == ALT length), 'mnv_del' (REF length > ALT length), or 'mnv_ins' (REF length < ALT length).
-#' @param return.raw If TRUE, will return a dataframe with the characteristics of each indel
 #' @param verbose Print progress messages?
 #' @param ... Other arguments that can be passed to variantsFromVcf()
 #'
@@ -56,19 +55,17 @@ extractSigsIndel <- function(..., method='CHORD'){
 #' @rdname extractSigsIndel
 extractSigsIndelPcawg <- function(
    vcf.file=NULL, df=NULL, output='contexts', sample.name=NULL, ref.genome=DEFAULT_GENOME,
-   signature.profiles=INDEL_SIGNATURE_PROFILES, return.raw=F, verbose=T, ...
+   signature.profiles=INDEL_SIGNATURE_PROFILES, verbose=F, ...
 ){
 
-   ## Ovarian cancer
-   #vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/160523_HMFreg0052_FR10303345_FR10303346_XXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
-   #vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/160709_HMFregXXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
-   #vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/160721_HMFregXXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
+   #vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO218019-from-jar//purple25/DO218019T.purple.somatic.vcf.gz'
+   #vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO222275-from-jar//purple25/DO222275T.purple.somatic.vcf.gz'
 
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
-      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose)
+      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS', keep.chroms=c(1:22,'X'))
    }
 
    ## Filter variants
@@ -221,7 +218,7 @@ extractSigsIndelPcawg <- function(
       })
 
       ## Initialize all large indels as of type repeat. Then override to type homology when applicable
-      df_split$large$mut_subtype <- 'rep'
+      df_split$large$mut_subtype <- rep('rep',nrow(df_split$large))
       df_split$large <- within(df_split$large,{
          mut_subtype[
             mut_type=='del'
@@ -251,22 +248,30 @@ extractSigsIndelPcawg <- function(
       })
 
       if(verbose){ message('Determining indel context...') }
-      df$mut_context <- with(df,{
-         paste0(
-            mut_type,'.',mut_len,'.',
-            mut_subtype,'.',mut_subtype_len
-         )
-      })
+      if(nrow(df)==0){
+         df$context <- character()
+      } else {
+         df$context <- with(df,{
+            paste0(
+               mut_type,'.',mut_len,'.',
+               mut_subtype,'.',mut_subtype_len
+            )
+         })
+      }
 
-      if(verbose){ message('Counting substitution context occurrences...') }
-      context_counts_new <- table(df$mut_context)
+      if(verbose){ message('Counting context occurrences...') }
+      df$context <- factor(df$context, names(context_counts))
+      context_counts_new <- table(df$context)
       context_counts[names(context_counts_new)] <- context_counts_new
       context_counts <- context_counts[INDEL_CONTEXTS]
    }
 
-   if(return.raw){ return(df) }
-
    ## Output --------------------------------
+   if(output == 'df'){
+      if(verbose){ message('Returning annotated bed-like dataframe...') }
+      return(df)
+   }
+
    if(output == 'contexts'){
       if(verbose){ message('Returning context counts...') }
       out <- as.matrix(context_counts)
@@ -294,15 +299,16 @@ extractSigsIndelPcawg <- function(
 ####################################################################################################
 #' @rdname extractSigsIndel
 extractSigsIndelChord <- function(
-   vcf.file=NULL, df=NULL, sample.name=NULL, ref.genome=DEFAULT_GENOME,
+   vcf.file=NULL, df=NULL, sample.name=NULL, ref.genome=DEFAULT_GENOME, output='contexts',
    indel.len.cap=5, n.bases.mh.cap=5, get.other.indel.allele=F, keep.indel.types=c('del','ins'),
-   return.raw=F, verbose=F, ...
+   verbose=F, ...
 ){
 
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
+      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS', keep.chroms=c(1:22,'X'))
    }
 
    ## Filter variants
@@ -321,6 +327,9 @@ extractSigsIndelChord <- function(
 
    ## Main ################################
    if(nrow(df)!=0){ ## Don't process empty vcfs
+
+      df$ref_len <- nchar(df$ref)
+      df$alt_len <- nchar(df$alt)
 
       ## Determine indel type
       df$indel_type <- with(df,{
@@ -416,8 +425,13 @@ extractSigsIndelChord <- function(
          },ref,alt,indel_type,indel_len, USE.NAMES=F))
       })
 
-      ## Subset for relevant columns --------------------------------
       df <- df[df$indel_type %in% keep.indel.types,]
+      if(nrow(df)==0){ warning('No variants remain after filtering for: ',paste(keep.indel.types, collapse=', ')) }
+   }
+
+   if(nrow(df)!=0){
+      ## Subset for relevant columns --------------------------------
+
       df <- df[,c('chrom','pos','ref','alt','indel_len','indel_type','indel_seq')]
 
       ## Pre-calculations for repeat and microhomology contexts --------------------------------
@@ -486,7 +500,7 @@ extractSigsIndelChord <- function(
 
       }, df$n_copies_along_flank, df$n_bases_mh, df$indel_len))
 
-      if(return.raw){ return(df) }
+      if(output=='df'){ return(df) }
 
       ## Gather components for counting final contexts/signatures --------------------------------
       if(verbose){ message('Counting indel context occurrences...') }

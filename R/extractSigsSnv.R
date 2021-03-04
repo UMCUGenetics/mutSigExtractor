@@ -1,16 +1,15 @@
 #' Extract single nucleotide variant signatures
 #'
-#' @description Will output a 1-column matrix containing: (if output = 'signatures') the absolute
+#' @description Will output a 1-column matrix containing: (if output=='signatures') the absolute
 #' signature contributions (i.e. the number of mutations contributing to each mutational signature),
-#' or (if output = 'contexts') the mutation contexts.
-#'
-#' To elaborate the signatures used are the 30 COSMIC signatures (https://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt),
-#' which are derived from the 96-trinucleotide mutation contexts.
+#' or (if output=='contexts') the mutation contexts, or (if output=='df') a dataframe with each
+#' mutation annotated by context
 #'
 #' @param vcf.file Path to the vcf file
-#' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file
-#' @param output Output the absolute signature contributions (default, 'signatures'), or the
-#' 96-trinucleotide contexts ('contexts')
+#' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to
+#' vcf.file
+#' @param output Output the absolute signature contributions (default, 'signatures'), the
+#' 96-trinucleotide contexts ('contexts'), or an annotated bed-like dataframe ('df')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
 #' this. If none is provided, the basename of the vcf file will be used.
 #' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
@@ -83,25 +82,31 @@ extractSigsSnv <- function(
       df[select_opp_types,'substitution'] <- chartr('ATGC', 'TACG', df[select_opp_types,'substitution'])
 
       ## Convert trinucleotide context to substitution context
-      df$subs_context <- paste0(
+      df$context <- paste0(
          substr(df$tri_context, 1, 1),
          '[', df$substitution, ']',
          substr(df$tri_context, 3, 3)
       )
+      df$context <- factor(df$context, names(context_counts))
 
       ## Update context_counts
       ## Count context occurrences. Fill found contexts into context_counts
       if(verbose){ message('Counting substitution context occurrences...') }
-      context_counts_new <- table(df$subs_context)
+      context_counts_new <- table(df$context)
       context_counts[names(context_counts_new)] <- context_counts_new
    }
 
    ## Output --------------------------------
-   if(output == 'contexts'){
+   if(output=='df'){
+      if(verbose){ message('Returning annotated bed-like dataframe...') }
+      return(df)
+   }
+
+   if(output=='contexts'){
       if(verbose){ message('Returning context counts...') }
       out <- as.matrix(context_counts)
 
-   } else if(output == 'signatures'){
+   } else if(output=='signatures'){
       if(verbose){ message('Returning absolute signature contributions...') }
       ## Least squares fitting
       out <- fitToSignatures(context_counts, signature.profiles)
