@@ -15,8 +15,7 @@ extractSigsIndelPcawg(
   sample.name = NULL,
   ref.genome = DEFAULT_GENOME,
   signature.profiles = INDEL_SIGNATURE_PROFILES,
-  return.raw = F,
-  verbose = T,
+  verbose = F,
   ...
 )
 
@@ -25,11 +24,11 @@ extractSigsIndelChord(
   df = NULL,
   sample.name = NULL,
   ref.genome = DEFAULT_GENOME,
+  output = "contexts",
   indel.len.cap = 5,
   n.bases.mh.cap = 5,
   get.other.indel.allele = F,
   keep.indel.types = c("del", "ins"),
-  return.raw = F,
   verbose = F,
   ...
 )
@@ -43,16 +42,14 @@ extractSigsIndelChord(
 
 \item{df}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
 
-\item{output}{Output the absolute signature contributions (default, 'signatures'), or indel
-contexts ('contexts')}
+\item{output}{Output the absolute signature contributions (default, 'signatures'), indel
+contexts ('contexts'), or an annotated bed-like dataframe ('df')}
 
 \item{sample.name}{If a character is provided, the header for the output matrix will be named to
 this. If none is provided, the basename of the vcf file will be used.}
 
 \item{ref.genome}{A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
 reference genome is indicated, it will also need to be installed.}
-
-\item{return.raw}{If TRUE, will return a dataframe with the characteristics of each indel}
 
 \item{verbose}{Print progress messages?}
 

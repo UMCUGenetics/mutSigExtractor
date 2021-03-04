@@ -5,7 +5,7 @@
 \alias{INDEL_SIGNATURE_PROFILES}
 \title{Indel signature profiles}
 \format{
-An object of class \code{matrix} (inherits from \code{array}) with 83 rows and 18 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 83 rows and 15 columns.
 }
 \usage{
 data(INDEL_SIGNATURE_PROFILES)
@@ -16,7 +16,6 @@ rows: indel context
 cols: indel signature
 }
 \details{
-Source: https://cancer.sanger.ac.uk/cosmic/signatures/ID/index.tt
-Each signature profile was downloaded manually, e.g. at https://cancer.sanger.ac.uk/sigs-assets-20/ID_vignettes/sigProfiler_ID_signatures_ID1.csv
+Source: https://cancer.sanger.ac.uk/sigs-assets-20/COSMIC_Mutational_Signatures_v3.1.xlsx
 }
 \keyword{datasets}

@@ -5,7 +5,7 @@
 \alias{DBS_SIGNATURE_PROFILES}
 \title{DBS signature profiles}
 \format{
-An object of class \code{matrix} (inherits from \code{array}) with 78 rows and 11 columns.
+An object of class \code{data.frame} with 78 rows and 11 columns.
 }
 \usage{
 data(DBS_SIGNATURE_PROFILES)
@@ -16,6 +16,6 @@ rows: dinucleotide base substitution (DBS) context
 cols: DBS signatures
 }
 \details{
-Source: https://www.synapse.org/#!Synapse:syn12009743
+Source: https://cancer.sanger.ac.uk/sigs-assets-20/COSMIC_Mutational_Signatures_v3.1.xlsx
 }
 \keyword{datasets}

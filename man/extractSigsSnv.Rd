@@ -18,10 +18,11 @@ extractSigsSnv(
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
-\item{df}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to vcf.file}
+\item{df}{A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to
+vcf.file}
 
-\item{output}{Output the absolute signature contributions (default, 'signatures'), or the
-96-trinucleotide contexts ('contexts')}
+\item{output}{Output the absolute signature contributions (default, 'signatures'), the
+96-trinucleotide contexts ('contexts'), or an annotated bed-like dataframe ('df')}
 
 \item{sample.name}{If a character is provided, the header for the output matrix will be named to
 this. If none is provided, the basename of the vcf file will be used.}
@@ -38,10 +39,8 @@ the mutation contexts and the columns are  the mutational signatures.}
 A 1-column matrix containing the context counts or signature contributions
 }
 \description{
-Will output a 1-column matrix containing: (if output = 'signatures') the absolute
+Will output a 1-column matrix containing: (if output=='signatures') the absolute
 signature contributions (i.e. the number of mutations contributing to each mutational signature),
-or (if output = 'contexts') the mutation contexts.
-
-To elaborate the signatures used are the 30 COSMIC signatures (https://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt),
-which are derived from the 96-trinucleotide mutation contexts.
+or (if output=='contexts') the mutation contexts, or (if output=='df') a dataframe with each
+mutation annotated by context
 }
