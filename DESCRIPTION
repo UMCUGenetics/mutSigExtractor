@@ -17,4 +17,6 @@ Imports:
 	IRanges
 Suggests:
 	BSgenome.Hsapiens.UCSC.hg19,
-	NNLM
+	NNLM,
+	reshape2,
+	ggplot2
