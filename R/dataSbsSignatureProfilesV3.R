@@ -4,37 +4,46 @@
 #' rows: 96-trinucleotide context
 #' cols: single base substitution (SBS) signatures
 #'
-#' Source: https://www.synapse.org/#!Synapse:syn12009743
+#' Source: https://cancer.sanger.ac.uk/sigs-assets-20/COSMIC_Mutational_Signatures_v3.1.xlsx
 #'
 #' @docType data
 #'
-#' @usage data(SBS_SIGNATURE_PROFILES_V2)
-'SBS_SIGNATURE_PROFILES_V2'
+#' @usage data(SBS_SIGNATURE_PROFILES_V3)
+'SBS_SIGNATURE_PROFILES_V3'
 
-# ## Code to create RData
-# sbs_ref <- read.csv('/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/mutSigExtractor/data/raw/sigProfiler_SBS_signatures_2019_05_22.csv')
-#
-# rownames(sbs_ref) <- with(sbs_ref,{
-#    paste0(
-#       substr(SubType,1,1),
-#       '[',Type,']',
-#       substr(SubType,3,3)
-#    )
-# })
-# sbs_ref <- sbs_ref[,grep('^SBS',colnames(sbs_ref))]
-# sbs_ref <- as.matrix(sbs_ref)
-#
-# dim(sbs_ref)
-#
-# ## Remove signatures potentially related to sequencing artefacts
-# excl_sbs_sigs <- c(
-#    'SBS27','SBS43','SBS45','SBS46','SBS47',
-#    'SBS48','SBS49','SBS50','SBS51','SBS52',
-#    'SBS53','SBS54','SBS55','SBS56','SBS57',
-#    'SBS58','SBS59','SBS60'
+
+# ## Code to create RData --------
+# df <- openxlsx::read.xlsx(
+#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/inst/COSMIC_Mutational_Signatures_v3.1.xlsx',
+#    sheet='SBS_GRCh37'
 # )
 #
-# sbs_ref <- sbs_ref[,!(colnames(sbs_ref) %in% excl_sbs_sigs)]
+# df$Type2 <- paste0(
+#    substring(df$Subtype,1,1),
+#    '[',
+#    df$Type,
+#    ']',
+#    substring(df$Subtype,3,3)
+# )
 #
-# SBS_SIGNATURE_PROFILES_V3 <- sbs_ref
-# save(SBS_SIGNATURE_PROFILES_V3, file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/Luan_projects/CHORD/scripts_main/mutSigExtractor/data/SBS_SIGNATURE_PROFILES_V3.RData')
+# df <- df[order(df$Type),]
+#
+# # identical(
+# #    df$Type2,
+# #    rownames(SBS_SIGNATURE_PROFILES_V3)
+# # )
+#
+# m <- df[,grep('^SBS',colnames(df))]
+# rownames(m) <- df$Type2
+#
+# excl_sigs <- read.delim(
+#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/inst/sigs_v3.1_exclusion.txt'
+# )
+# excl_sigs <- subset(excl_sigs, nchar(exclude_reason)!=0, sig_name, drop=T)
+# m <- m[,!(colnames(m) %in% excl_sigs)]
+#
+# SBS_SIGNATURE_PROFILES_V3 <- m
+# save(
+#    SBS_SIGNATURE_PROFILES_V3,
+#    file='/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/data/SBS_SIGNATURE_PROFILES_V3.RData'
+# )

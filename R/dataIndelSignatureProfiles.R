@@ -4,8 +4,7 @@
 #' rows: indel context
 #' cols: indel signature
 #'
-#' Source: https://cancer.sanger.ac.uk/cosmic/signatures/ID/index.tt
-#' Each signature profile was downloaded manually, e.g. at https://cancer.sanger.ac.uk/sigs-assets-20/ID_vignettes/sigProfiler_ID_signatures_ID1.csv
+#' Source: https://cancer.sanger.ac.uk/sigs-assets-20/COSMIC_Mutational_Signatures_v3.1.xlsx
 #'
 #' @docType data
 #'
@@ -13,36 +12,26 @@
 'INDEL_SIGNATURE_PROFILES'
 
 # ## Code to create RData --------
-# ## Gather CSV files
-# csv_files <- list.files(
-#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/data/raw/indel_signatures',
-#    pattern='sigProfiler.*.csv$',full.names=T
-# )
-# csv_files <- naturalsort::naturalsort(csv_files)
-#
-# l_sig_profiles <- lapply(csv_files, read.csv, stringsAsFactors=F)
-#
-# m <- do.call(cbind, lapply(l_sig_profiles,`[`,2))
-# colnames(m) <- gsub('_\\w+$','',colnames(m))
-# rownames(m) <- l_sig_profiles[[1]]$MutationType
-# m <- m[grep(':',rownames(m)),]
-#
-# write.table(
-#    m,
-#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/data/raw/sigProfiler_ID_signatures_3.1.txt',
-#    sep='\t', quote=F
+# df <- openxlsx::read.xlsx(
+#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/inst/COSMIC_Mutational_Signatures_v3.1.xlsx',
+#    sheet='ID_GRCh37'
 # )
 #
-# ## !!! Added mut_type_2 by hand
-# m2 <- read.delim('/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/data/raw/sigProfiler_ID_signatures_3.1.txt')
-# m2 <- m2[!is.na(m2$mut_type_2),]
-# context_names <- m2$mut_type_2
+# m <- df[!is.na(df$Type2),]
+# rownames(m) <- m$Type2
+# m <- m[,grep('^ID',colnames(df))]
+# m <- as.matrix(m)
 #
-# m2 <- m2[,grep('^ID',colnames(m2))]
-# rownames(m2) <- context_names
+# excl_sigs <- read.delim(
+#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/inst/sigs_v3.1_exclusion.txt'
+# )
+# excl_sigs <- subset(excl_sigs, nchar(exclude_reason)!=0, sig_name, drop=T)
+# m <- m[,!(colnames(m) %in% excl_sigs)]
 #
-# INDEL_SIGNATURE_PROFILES <- as.matrix(m2)
+# INDEL_SIGNATURE_PROFILES <- m
 # save(
 #    INDEL_SIGNATURE_PROFILES,
 #    file='/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/data/INDEL_SIGNATURE_PROFILES.RData'
 # )
+
+
