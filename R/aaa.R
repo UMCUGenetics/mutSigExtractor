@@ -1,6 +1,4 @@
 ## Global variables
-
-
 .onLoad <- function(libname, pkgname){
 
    ## hg19 ref genome --------------------------------
