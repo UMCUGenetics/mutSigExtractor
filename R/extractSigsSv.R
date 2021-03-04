@@ -142,7 +142,6 @@ getContextsSv <- function(df, sv.caller='gridss', return.raw=F, verbose=F){
 #'
 #' @return A 1-column matrix containing the context counts or signature contributions
 #' @export
-
 extractSigsSv <- function(
    vcf.file=NULL, df=NULL, output='signatures', sample.name=NULL,
    sv.caller='gridss', half.tra.counts=F,
