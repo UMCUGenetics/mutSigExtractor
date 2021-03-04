@@ -317,6 +317,7 @@ lsqnonneg <- function(mut.context.counts, signature.profiles){
 
 #' @rdname fitToSignatures
 #' @method fitToSignatures default
+#' @export
 fitToSignatures.default <- function(
    mut.context.counts, signature.profiles,
    method='lsq', max.delta=0.01,
@@ -335,6 +336,7 @@ fitToSignatures.default <- function(
 
 #' @rdname fitToSignatures
 #' @method fitToSignatures matrix
+#' @export
 fitToSignatures.matrix <- function(mut.context.counts, signature.profiles, verbose=F, ...){
 
    mut.context.counts <- as.matrix(mut.context.counts)
@@ -364,6 +366,7 @@ fitToSignatures.matrix <- function(mut.context.counts, signature.profiles, verbo
 
 #' @rdname fitToSignatures
 #' @method fitToSignatures data.frame
+#' @export
 fitToSignatures.data.frame <- fitToSignatures.matrix
 
 
