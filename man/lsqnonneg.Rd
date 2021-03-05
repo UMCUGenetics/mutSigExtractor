@@ -2,9 +2,18 @@
 % Please edit documentation in R/fitToSignatures.R
 \name{lsqnonneg}
 \alias{lsqnonneg}
+\alias{lsqnonneg.default}
+\alias{lsqnonneg.matrix}
+\alias{lsqnonneg.data.frame}
 \title{Non-negative least squares fitting}
 \usage{
-lsqnonneg(mut.context.counts, signature.profiles)
+lsqnonneg(x, ...)
+
+\method{lsqnonneg}{default}(mut.context.counts, signature.profiles)
+
+\method{lsqnonneg}{matrix}(mut.context.counts, signature.profiles, verbose = F)
+
+\method{lsqnonneg}{data.frame}(mut.context.counts, signature.profiles, verbose = F)
 }
 \arguments{
 \item{mut.context.counts}{A numeric vector of mutation context counts}

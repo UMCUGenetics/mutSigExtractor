@@ -13,7 +13,7 @@ assignSigPerMut(
   args.extract.sigs = list(vcf.filter = "PASS"),
   fit.method = "strict",
   args.fit = NULL,
-  verbose = T
+  verbose = F
 )
 }
 \arguments{
@@ -33,12 +33,12 @@ names are assigned_sig, and values are sig_prob).}
 \item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are
 the mutation contexts and the columns are the mutational signatures.}
 
-\item{args.extract.sigs}{Args that can be passed to the `extractSigs*()` functions}
+\item{args.extract.sigs}{A list of args that can be passed to the `extractSigs*()` functions}
 
 \item{fit.method}{Can be 'lsq' or 'strict'. Method for fitting context counts to signature
 profiles. See documentation for `fitToSignatures()` for more details}
 
-\item{args.fit}{Args that can be passed to the `fitToSignatures*()` functions}
+\item{args.fit}{A list of args that can be passed to the `fitToSignatures*()` functions}
 
 \item{verbose}{Print progress messages?}
 }

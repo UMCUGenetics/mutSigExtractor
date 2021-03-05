@@ -3,45 +3,42 @@
 \name{fitToSignatures}
 \alias{fitToSignatures}
 \alias{fitToSignaturesFast}
+\alias{fitToSignaturesStrict}
 \alias{fitToSignaturesFastStrict}
-\alias{fitToSignatures.default}
-\alias{fitToSignatures.matrix}
-\alias{fitToSignatures.data.frame}
 \title{Linear least-squares (non-negative) fitting}
 \usage{
-fitToSignatures(mut.context.counts, ...)
+fitToSignatures(
+  mut.context.counts,
+  signature.profiles,
+  use.r.implementation = T,
+  verbose = F
+)
 
-fitToSignaturesFast(mut.context.counts, signature.profiles, verbose = F)
+fitToSignaturesFast(...)
 
-fitToSignaturesFastStrict(
+fitToSignaturesStrict(
   mut.context.counts,
   signature.profiles,
   max.delta = 0.004,
   detailed.output = F,
+  use.r.implementation = T,
   verbose = F
 )
 
-\method{fitToSignatures}{default}(
-  mut.context.counts,
-  signature.profiles,
-  method = "lsq",
-  max.delta = 0.01,
-  verbose = F
-)
-
-\method{fitToSignatures}{matrix}(mut.context.counts, signature.profiles, verbose = F, ...)
-
-\method{fitToSignatures}{data.frame}(mut.context.counts, signature.profiles, verbose = F, ...)
+fitToSignaturesFastStrict(...)
 }
 \arguments{
 \item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are
 the mutation contexts and the columns are the mutational signatures.}
 
+\item{use.r.implementation}{If TRUE, least squares fitting will be performed using the slow R
+function `lsqnonneg()`. If FALSE, the much faster NNLM::nnlm() will be used (written in C++)}
+
 \item{verbose}{Show progress messages?}
 
 \item{max.delta}{See description.}
 
-\item{detailed.output}{Only for fitToSignaturesFastStrict(). Also return results from the
+\item{detailed.output}{Only for `fitToSignaturesStrict()`. Also return results from the
 iterative fitting? Includes: cosine similarity between the original and reconstructed mutation
 context; signatures removed at each iteration. Useful for plotting fitting performance.}
 
@@ -56,18 +53,13 @@ signature). If a matrix is provided, a matrix of absolute contributions is retur
 \description{
 Calculate the contribution of each mutational signature in a sample, given a vector
 of mutation contexts. This is done by least-squares fitting, i.e. find a linear non-negative
-combination of mutation signatures that optimally reconstructs the mutation matrix
-
-fitToSignatures() is a slow R implementation of least-squares fitting based on the lsqnonneg()
-function in the pracma from the R package.
-
-fitToSignaturesFast() is a wrapper for NNLM::nnlm(), a least-squares fitting function implemented
-in C++.
+combination of mutation signatures that optimally reconstructs the mutation matrix. This is
+performed by `fitToSignatures()`
 
 Only performing least-squares fitting is however potentially prone to overfitting.
-fitToSignaturesFastStrict() tries to solve this problem by performing an initial fit,
-then iteratively removing the signature with the lowest contribution and with fitting then
-repeated. Each time the cosine distance between the original and reconstructed mutation context
-profile is calculated. Iterations are stopped when cosine distance > max.delta. The second-last
-set of signatures is then returned.
+`fitToSignaturesStrict()` tries to solve this problem by performing an initial fit, then
+iteratively removing the signature with the lowest contribution and with fitting then repeated.
+Each time the cosine distance between the original and reconstructed mutation context profile is
+calculated. Iterations are stopped when cosine distance > max.delta. The second-last set of
+signatures is then returned.
 }
