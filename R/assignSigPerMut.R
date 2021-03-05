@@ -20,10 +20,10 @@
 #' names are assigned_sig, and values are sig_prob).
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are the mutational signatures.
-#' @param args.extract.sigs Args that can be passed to the `extractSigs*()` functions
+#' @param args.extract.sigs A list of args that can be passed to the `extractSigs*()` functions
 #' @param fit.method Can be 'lsq' or 'strict'. Method for fitting context counts to signature
 #' profiles. See documentation for `fitToSignatures()` for more details
-#' @param args.fit Args that can be passed to the `fitToSignatures*()` functions
+#' @param args.fit A list of args that can be passed to the `fitToSignatures*()` functions
 #' @param verbose Print progress messages?
 #'
 #' @return See `output`
@@ -92,74 +92,88 @@ assignSigPerMut <- function(
    df <- do.call(f_extract_sigs, args_extract_sigs)
    rm(f_extract_sigs, args_extract_sigs)
 
-   ## Select only relevant columns
-   df <- df[,c('chrom','pos','ref','alt','context')]
-
    ## --------------------------------
-   if(verbose){ message('Counting mutation contexts...') }
-   context_counts_pre <- table(df$context)
-   context_counts <- structure(
-      rep(0, length(levels(df$context))),
-      names=levels(df$context)
-   )
-   context_counts[names(context_counts_pre)] <- context_counts_pre
+   if(nrow(df)!=0){
 
-   ## --------------------------------
-   if(verbose){ message('Fitting context counts to signature profiles...') }
-   if(!is.null(signature.profiles)){
-      sig_profiles <- signature.profiles
+      ## Select only relevant columns
+      df <- df[,c('chrom','pos','ref','alt','context')]
+
+      if(verbose){ message('Counting mutation contexts...') }
+      context_counts_pre <- table(df$context)
+      context_counts <- structure(
+         rep(0, length(levels(df$context))),
+         names=levels(df$context)
+      )
+      context_counts[names(context_counts_pre)] <- context_counts_pre
+
+      ## --------------------------------
+      if(verbose){ message('Fitting context counts to signature profiles...') }
+      if(!is.null(signature.profiles)){
+         sig_profiles <- signature.profiles
+      } else {
+         sig_profiles <- switch(
+            mode,
+            snv=SBS_SIGNATURE_PROFILES_V3,
+            sbs=SBS_SIGNATURE_PROFILES_V3,
+            dbs=DBS_SIGNATURE_PROFILES,
+            indel=INDEL_SIGNATURE_PROFILES
+         )
+      }
+      #sig_profiles <- sig_profiles / colSums(sig_profiles) ## Force total prob to be 1
+
+      ## Force context names and order to be the same in sig profile matrix
+      if(!all(names(context_counts) %in% rownames(sig_profiles))){
+         stop('Extracted contexts do not match `rownames(signature.profiles)`. Maybe the wrong `mode` was selected?')
+      }
+      sig_profiles <- sig_profiles[names(context_counts),]
+
+      f_fit <- switch(
+         fit.method,
+         lsq=fitToSignatures,
+         strict=fitToSignaturesStrict
+      )
+
+      args_fit <- c(
+         list(mut.context.counts=context_counts, signature.profiles=sig_profiles),
+         args.fit
+      )
+      args_fit <- args_fit[ !duplicated(names(args_fit)) ]
+
+      sig_contrib <- do.call(f_fit, args_fit)
+      rm(f_fit, args_fit)
+
+      ## --------------------------------
+      if(verbose){ message('Calculating signature probabilities per mutation...') }
+
+      ## Adjust signature context probabilities based on signature contributions in sample
+      sig_profiles_sample <- t(apply(sig_profiles, 1, function(i){ i * sig_contrib }))
+      colnames(sig_profiles_sample) <- colnames(sig_profiles)
+      sig_profiles_sample <- sig_profiles_sample / rowSums(sig_profiles_sample)
+
+      ## Get max probability signature per context
+      context_sig_assignment <- data.frame(
+         assigned_sig = colnames(sig_profiles_sample)[ max.col(sig_profiles_sample) ],
+         sig_prob = apply(sig_profiles_sample,1,max),
+         row.names=rownames(sig_profiles_sample)
+      )
+
+      ## Assign each mutation a signature based on its context
+      df <- data.frame(
+         df,
+         context_sig_assignment[df$context,]
+      )
    } else {
-      sig_profiles <- switch(
-         mode,
-         snv=SBS_SIGNATURE_PROFILES_V3,
-         sbs=SBS_SIGNATURE_PROFILES_V3,
-         dbs=DBS_SIGNATURE_PROFILES,
-         indel=INDEL_SIGNATURE_PROFILES
+      if(verbose){ message('Input contains no variants, or all variants were filtered out') }
+      df <- data.frame(
+         chrom=character(),
+         pos=character(),
+         ref=character(),
+         alt=character(),
+         context=character(),
+         assigned_sig=character(),
+         sig_prob=character()
       )
    }
-   #sig_profiles <- sig_profiles / colSums(sig_profiles) ## Force total prob to be 1
-
-   ## Force context names and order to be the same in sig profile matrix
-   if(!all(names(context_counts) %in% rownames(sig_profiles))){
-      stop('\nExtracted contexts do not match `rownames(signature.profiles)`\nMaybe the wrong `mode` was selected?')
-   }
-   sig_profiles <- sig_profiles[names(context_counts),]
-
-   f_fit <- switch(
-      fit.method,
-      lsq=fitToSignaturesFast,
-      strict=fitToSignaturesFastStrict
-   )
-
-   args_fit <- c(
-      list(mut.context.counts=context_counts, signature.profiles=sig_profiles),
-      args.fit
-   )
-   args_fit <- args_fit[ !duplicated(names(args_fit)) ]
-
-   sig_contrib <- do.call(f_fit, args_fit)
-   rm(f_fit, args_fit)
-
-   ## --------------------------------
-   if(verbose){ message('Calculating signature probabilities per mutation...') }
-
-   ## Adjust signature context probabilities based on signature contributions in sample
-   sig_profiles_sample <- t(apply(sig_profiles, 1, function(i){ i * sig_contrib }))
-   colnames(sig_profiles_sample) <- colnames(sig_profiles)
-   sig_profiles_sample <- sig_profiles_sample / rowSums(sig_profiles_sample)
-
-   ## Get max probability signature per context
-   context_sig_assignment <- data.frame(
-      assigned_sig = colnames(sig_profiles_sample)[ max.col(sig_profiles_sample) ],
-      sig_prob = apply(sig_profiles_sample,1,max),
-      row.names=rownames(sig_profiles_sample)
-   )
-
-   ## Assign each mutation a signature based on its context
-   df <- data.frame(
-      df,
-      context_sig_assignment[df$context,]
-   )
 
    ## --------------------------------
    if(verbose){ message('Returning output...') }
