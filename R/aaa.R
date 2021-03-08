@@ -21,6 +21,12 @@
    }
 
    assign('DEFAULT_GENOME', DEFAULT_GENOME, envir=parent.env(environment()))
+
+   assign(
+      'SIG_METADATA_PATH',
+      system.file('/sigs_v3.1_metadata.txt',package='mutSigExtractor'),
+      envir=parent.env(environment())
+   )
 }
 
 
