@@ -136,6 +136,10 @@ lsqnonneg.data.frame <- lsqnonneg.matrix
 #' calculated. Iterations are stopped when cosine distance > max.delta. The second-last set of
 #' signatures is then returned.
 #'
+#' `fitToSignaturesFast()` and `fitToSignaturesFastStrict()` are wrappers for
+#' `fitToSignatures(..., use.r.implementation=F)` and `fitToSignaturesStrict(..., use.r.implementation=F)`
+#' for backwards compatibility
+#'
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are the mutational signatures.
 #' @param mut.contexts A vector of mutation contexts, or a matrix where rows are samples and columns
@@ -188,9 +192,9 @@ fitToSignatures <- function(mut.context.counts, signature.profiles, use.r.implem
          mut.context.counts <- t(mut.context.counts)
       }
       t( NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients )
+   } else {
+      lsqnonneg(mut.context.counts, signature.profiles)
    }
-
-   lsqnonneg(mut.context.counts, signature.profiles)
 }
 
 #' @rdname fitToSignatures
