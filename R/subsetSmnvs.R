@@ -1,3 +1,33 @@
+#' Determine SMNV type from REF and ALT
+#'
+#' @param ref A character vector of the REF sequences
+#' @param alt A character vector of the ALT sequences
+#'
+#' @return A character vector indicating: snv, dbs, indel, mnv
+#' @export
+#'
+detSmnvType <- function(ref, alt){
+
+   #ref=muts$REF
+   #alt=muts$ALT
+
+   if(length(ref)!=length(alt)){
+      stop('`ref` and `alt` must be the same length')
+   }
+
+   ref_len <- nchar(ref)
+   alt_len <- nchar(alt)
+
+   out <- rep('mnv', length(ref))
+
+   out[ref_len==1 & alt_len==1] <- 'snv'
+   out[ref_len==2 & alt_len==2] <- 'dbs'
+   out[(ref_len==1 & alt_len>1) | (ref_len>1 & alt_len==1)] <- 'indel'
+
+   return(out)
+}
+
+####################################################################################################
 #' Subset for SNVs, DBSs, or indels
 #'
 #' @description Standard variant filtering and subsetting for variant type used to clean the input
@@ -41,12 +71,11 @@ subsetSmnvs <- function(df, type, ref.genome=DEFAULT_GENOME, verbose=F){
    GenomeInfoDb::seqlevelsStyle(df$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
 
    ## Select variant type --------------------------------
-   df$ref_len <- nchar(df$ref)
-   df$alt_len <- nchar(df$alt)
+   df$mut_type <- detSmnvType(ref=df$ref, alt=df$alt)
 
    if(type=='snv'){
       if(verbose){ message('Subsetting for SNVs...') }
-      df <- df[df$ref_len==1 & df$alt_len==1,]
+      df <- df[df$mut_type=='snv',]
       if(nrow(df)==0){
          warning('No variants remained after subsetting for SNVs. Returning empty dataframe')
          return(data.frame())
@@ -55,7 +84,7 @@ subsetSmnvs <- function(df, type, ref.genome=DEFAULT_GENOME, verbose=F){
 
    if(type=='dbs'){
       if(verbose){ message('Subsetting for DBSs...') }
-      df <- df[df$ref_len==2 & df$alt_len==2,]
+      df <- df[df$mut_type=='dbs',]
       if(nrow(df)==0){
          warning('No variants remained after subsetting for DBSs. Returning empty dataframe')
          return(data.frame())
@@ -64,11 +93,8 @@ subsetSmnvs <- function(df, type, ref.genome=DEFAULT_GENOME, verbose=F){
 
    if(type=='indel'){
       if(verbose){ message('Determining indel type...') }
-      ## Calc sequence lengths
-
-
-      ## Remove snvs
-      df <- df[!(df$ref_len==1 & df$alt_len==1),]
+      ## Remove snvs. This is the definition used by MutationalPatterns
+      df <- df[df$mut_type!='snv',]
       if(nrow(df)==0){
          warning('No variants remained after subsetting for indels. Returning empty data.frame')
          return(data.frame())
