@@ -216,8 +216,8 @@ fitToSignaturesStrict <- function(
 
    if(F){
       mut.context.counts=context_counts
-      mut.context.counts=contexts[1:10,]
-      signature.profiles=SBS_SIGNATURE_PROFILES_V3
+      mut.context.counts=contexts$dbs[1,]
+      signature.profiles=sig_profiles
       max.delta=0.004
       verbose=T
    }
@@ -298,91 +298,95 @@ fitToSignaturesStrict <- function(
    l_sims <- list()
    l_removed_sigs <- list()
 
-   if(verbose==2){ pb <- txtProgressBar(max=n_samples, style=3) }
+   if(sum(sig_pres)==1){
+      l_contribs[[1]] <- fit_init[,1]
+   } else {
+      if(verbose==2){ pb <- txtProgressBar(max=n_samples, style=3) }
 
-   for (i in 1:n_samples) {
-      #i=1
+      for (i in 1:n_samples) {
+         #i=1
 
-      if(verbose==1){ message(' [',i,'/',n_samples,'] ', colnames(mut.context.counts)[i]) }
-      if(verbose==2){ setTxtProgressBar(pb, i) }
+         if(verbose==1){ message(' [',i,'/',n_samples,'] ', colnames(mut.context.counts)[i]) }
+         if(verbose==2){ setTxtProgressBar(pb, i) }
 
-      my_signatures <- my_signatures_total
-      mut_mat_sample <- mut.context.counts[, i, drop=FALSE]
+         my_signatures <- my_signatures_total
+         mut_mat_sample <- mut.context.counts[, i, drop=FALSE]
 
-      ## Initialize output vectors
-      ## Keep track of the cosine similarity and which signatures are removed.
-      sims <- rep(NA, n_sigs)
-      removed_sigs <- rep(NA, n_sigs)
+         ## Initialize output vectors
+         ## Keep track of the cosine similarity and which signatures are removed.
+         sims <- rep(NA, n_sigs)
+         removed_sigs <- rep(NA, n_sigs)
 
-      contrib <- structure(
-         rep(0, ncol(signature.profiles)),
-         names=colnames(signature.profiles)
-      )
-      if(sum(mut_mat_sample[,1])==0){
+         contrib <- structure(
+            rep(0, ncol(signature.profiles)),
+            names=colnames(signature.profiles)
+         )
+         if(sum(mut_mat_sample[,1])==0){
+            l_contribs[[i]] <- contrib
+            l_sims[[i]] <- sims
+            l_removed_sigs[[i]] <- removed_sigs
+            next
+         }
+
+         ## Fit again
+         fit_res <- list()
+         #fit_res$contribution <- NNLM::nnlm(my_signatures, mut_mat_sample)$coefficients
+         fit_res$contribution <- f_fit(mut_mat_sample, my_signatures)
+         fit_res$reconstructed <- my_signatures %*% fit_res$contribution
+
+         sim <- cosSim(fit_res$reconstructed[,1], mut_mat_sample[,1])
+         sims[[1]] <- sim
+
+         ## Sequentially remove the signature with the lowest contribution
+         for (j in 2:n_sigs) {
+            #j=2
+
+            # Remove signature with the weakest relative contribution
+            contri_order <- order(fit_res$contribution[,1] / sum(fit_res$contribution[,1]))
+            weakest_sig_index <- contri_order[1]
+            weakest_sig <- colnames(my_signatures)[weakest_sig_index]
+            removed_sigs[[j]] <- weakest_sig
+            signatures_sel <- my_signatures[, -weakest_sig_index, drop=FALSE]
+
+            # Fit with new signature selection
+            fit_res <- list()
+            #fit_res$contribution <- NNLM::nnlm(signatures_sel, mut_mat_sample)$coefficients
+            fit_res$contribution <- f_fit(mut_mat_sample, signatures_sel)
+            fit_res$reconstructed <- signatures_sel %*% fit_res$contribution
+
+            sim_new <- cosSim(fit_res$reconstructed, mut_mat_sample)
+
+            if(is.na(sim_new)){
+               sim_new <- 0
+               # if(verbose){
+               #    warning("New similarity between the original and the reconstructed
+               #             spectra after the removal of a signature was NaN.
+               #             It has been converted into a 0.
+               #             This happened with the following fit_res:")
+               #    print(fit_res)
+               # }
+            }
+            sims[[j]] <- sim_new
+
+            # Check if the loss in cosine similarity between the original vs reconstructed after removing the signature is below the cutoff.
+            if(sim-sim_new <= max.delta){
+               my_signatures <- signatures_sel
+               sim <- sim_new
+            } else {
+               break
+            }
+         }
+
+         ## Fit with the final set of signatures
+         ## Fill in 0 for absent signatures
+         #contrib_pre <- NNLM::nnlm(my_signatures, mut_mat_sample)$coefficients[,1]
+         contrib_pre <- f_fit(mut_mat_sample, my_signatures)[,1]
+         contrib[names(contrib_pre)] <- contrib_pre
+
          l_contribs[[i]] <- contrib
          l_sims[[i]] <- sims
          l_removed_sigs[[i]] <- removed_sigs
-         next
       }
-
-      ## Fit again
-      fit_res <- list()
-      #fit_res$contribution <- NNLM::nnlm(my_signatures, mut_mat_sample)$coefficients
-      fit_res$contribution <- f_fit(mut_mat_sample, my_signatures)
-      fit_res$reconstructed <- my_signatures %*% fit_res$contribution
-
-      sim <- cosSim(fit_res$reconstructed[,1], mut_mat_sample[,1])
-      sims[[1]] <- sim
-
-      ## Sequentially remove the signature with the lowest contribution
-      for (j in 2:n_sigs) {
-         #j=2
-
-         # Remove signature with the weakest relative contribution
-         contri_order <- order(fit_res$contribution[,1] / sum(fit_res$contribution[,1]))
-         weakest_sig_index <- contri_order[1]
-         weakest_sig <- colnames(my_signatures)[weakest_sig_index]
-         removed_sigs[[j]] <- weakest_sig
-         signatures_sel <- my_signatures[, -weakest_sig_index, drop=FALSE]
-
-         # Fit with new signature selection
-         fit_res <- list()
-         #fit_res$contribution <- NNLM::nnlm(signatures_sel, mut_mat_sample)$coefficients
-         fit_res$contribution <- f_fit(mut_mat_sample, signatures_sel)
-         fit_res$reconstructed <- signatures_sel %*% fit_res$contribution
-
-         sim_new <- cosSim(fit_res$reconstructed, mut_mat_sample)
-
-         if(is.na(sim_new)){
-            sim_new <- 0
-            # if(verbose){
-            #    warning("New similarity between the original and the reconstructed
-            #             spectra after the removal of a signature was NaN.
-            #             It has been converted into a 0.
-            #             This happened with the following fit_res:")
-            #    print(fit_res)
-            # }
-         }
-         sims[[j]] <- sim_new
-
-         # Check if the loss in cosine similarity between the original vs reconstructed after removing the signature is below the cutoff.
-         if(sim-sim_new <= max.delta){
-            my_signatures <- signatures_sel
-            sim <- sim_new
-         } else {
-            break
-         }
-      }
-
-      ## Fit with the final set of signatures
-      ## Fill in 0 for absent signatures
-      #contrib_pre <- NNLM::nnlm(my_signatures, mut_mat_sample)$coefficients[,1]
-      contrib_pre <- f_fit(mut_mat_sample, my_signatures)[,1]
-      contrib[names(contrib_pre)] <- contrib_pre
-
-      l_contribs[[i]] <- contrib
-      l_sims[[i]] <- sims
-      l_removed_sigs[[i]] <- removed_sigs
    }
 
    ## --------------------------------
