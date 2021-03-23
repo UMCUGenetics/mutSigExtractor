@@ -75,11 +75,11 @@ plotContrib <- function(
 ){
 
    if(F){
-      x=t(sigs.de_novo)
+      x=sig_profiles
       mode='contexts'
-      mut.type='snv'
-      group=NULL
-      y.axis.var.scale=F
+      mut.type='dbs'
+      group=rownames(sig_profiles)
+      y.axis.var.scale=T
    }
 
    ## Checks --------------------------------
@@ -96,8 +96,8 @@ plotContrib <- function(
 
    MUT_TYPES_VALID <- list(
       snv=SUBS_CONTEXTS_96,
-      dbs=INDEL_CONTEXTS,
-      indel=DBS_TYPES$context
+      dbs=DBS_TYPES$context,
+      indel=INDEL_CONTEXTS
    )
 
    if(mode=='contexts'){
