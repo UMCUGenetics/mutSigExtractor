@@ -13,6 +13,9 @@ assignSigPerMut(
   args.extract.sigs = list(vcf.filter = "PASS"),
   fit.method = "strict",
   args.fit = NULL,
+  min.mut.load = "auto",
+  min.sig.abs.contrib = "auto",
+  min.sig.rel.contrib = 0.05,
   verbose = F
 )
 }
@@ -27,7 +30,7 @@ to use. Additionally, if `signature.profiles` is unspecified, the correct signat
 matrix will be automatically chosen}
 
 \item{output}{Can be 'df' (a dataframe with chrom, pos, ref, alt, context, assigned_sig, sig_prob),
-'df.compact' (a dataframe with context, assigned_sig, sig_prob), or 'vector' (a vector whose
+'df.compact' (a dataframe with context, assigned_sig, sig_prob), 'details' or 'vector' (a vector whose
 names are assigned_sig, and values are sig_prob).}
 
 \item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are
@@ -39,6 +42,15 @@ the mutation contexts and the columns are the mutational signatures.}
 profiles. See documentation for `fitToSignatures()` for more details}
 
 \item{args.fit}{A list of args that can be passed to the `fitToSignatures*()` functions}
+
+\item{min.mut.load}{Samples with fewer mutations than this value will have no mutations assigned
+to any signatures (all mutations assigned as NA)}
+
+\item{min.sig.abs.contrib}{Mutations attributed to signatures with absolute contribution lower
+than this value will be assigned NA instead}
+
+\item{min.sig.rel.contrib}{Signatures with low relative contribution (less than this value, e.g.
+0.05 for 5%) of will be excluded from the assignment.}
 
 \item{verbose}{Print progress messages?}
 }

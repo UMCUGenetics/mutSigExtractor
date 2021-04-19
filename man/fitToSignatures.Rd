@@ -62,4 +62,8 @@ iteratively removing the signature with the lowest contribution and with fitting
 Each time the cosine distance between the original and reconstructed mutation context profile is
 calculated. Iterations are stopped when cosine distance > max.delta. The second-last set of
 signatures is then returned.
+
+`fitToSignaturesFast()` and `fitToSignaturesFastStrict()` are wrappers for
+`fitToSignatures(..., use.r.implementation=F)` and `fitToSignaturesStrict(..., use.r.implementation=F)`
+for backwards compatibility
 }
