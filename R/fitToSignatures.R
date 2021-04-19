@@ -185,15 +185,15 @@ fitToSignatures <- function(mut.context.counts, signature.profiles, use.r.implem
    }
 
    ## Main --------------------------------
-   if(!use.r.implementation){
+   if(use.r.implementation){
+      lsqnonneg(mut.context.counts, signature.profiles)
+   } else {
       if(is.vector(mut.context.counts)){
          mut.context.counts <- matrix(mut.context.counts, ncol=1)
       } else {
          mut.context.counts <- t(mut.context.counts)
       }
       t( NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients )
-   } else {
-      lsqnonneg(mut.context.counts, signature.profiles)
    }
 }
 
@@ -253,13 +253,7 @@ fitToSignaturesStrict <- function(
       mut.context.counts <- t(mut.context.counts)
    }
 
-   if(!use.r.implementation){
-      if(verbose){ message('Using C++ implementation for least squares fitting...') }
-      require(NNLM)
-      f_fit <- function(mut.context.counts, signature.profiles){
-         nnlm(signature.profiles, mut.context.counts)$coefficients
-      }
-   } else {
+   if(use.r.implementation){
       if(verbose){ message('Using R implementation for least squares fitting...') }
       if(ncol(mut.context.counts)==1){
          f_fit <- function(mut.context.counts, signature.profiles){
@@ -273,7 +267,14 @@ fitToSignaturesStrict <- function(
             t(lsqnonneg.matrix(t(mut.context.counts), signature.profiles))
          }
       }
+   } else {
+      if(verbose){ message('Using C++ implementation for least squares fitting...') }
+      require(NNLM)
+      f_fit <- function(mut.context.counts, signature.profiles){
+         nnlm(signature.profiles, mut.context.counts)$coefficients
+      }
    }
+
    #f_fit(mut.context.counts, signature.profiles)
 
    ## --------------------------------
