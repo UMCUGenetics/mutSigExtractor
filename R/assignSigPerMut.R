@@ -16,7 +16,7 @@
 #' to use. Additionally, if `signature.profiles` is unspecified, the correct signature profile
 #' matrix will be automatically chosen
 #' @param output Can be 'df' (a dataframe with chrom, pos, ref, alt, context, assigned_sig, sig_prob),
-#' 'df.compact' (a dataframe with context, assigned_sig, sig_prob), or 'vector' (a vector whose
+#' 'df.compact' (a dataframe with context, assigned_sig, sig_prob), 'details' or 'vector' (a vector whose
 #' names are assigned_sig, and values are sig_prob).
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are the mutational signatures.
@@ -24,6 +24,12 @@
 #' @param fit.method Can be 'lsq' or 'strict'. Method for fitting context counts to signature
 #' profiles. See documentation for `fitToSignatures()` for more details
 #' @param args.fit A list of args that can be passed to the `fitToSignatures*()` functions
+#' @param min.mut.load Samples with fewer mutations than this value will have no mutations assigned
+#' to any signatures (all mutations assigned as NA)
+#' @param min.sig.abs.contrib Mutations attributed to signatures with absolute contribution lower
+#' than this value will be assigned NA instead
+#' @param min.sig.rel.contrib Signatures with low relative contribution (less than this value, e.g.
+#' 0.05 for 5%) of will be excluded from the assignment.
 #' @param verbose Print progress messages?
 #'
 #' @return See `output`
@@ -34,17 +40,27 @@ assignSigPerMut <- function(
    signature.profiles=NULL,
    args.extract.sigs=list(vcf.filter='PASS'),
    fit.method='strict', args.fit=NULL,
+   min.mut.load='auto', min.sig.abs.contrib='auto', min.sig.rel.contrib=0.05,
    verbose=F
 ){
 
    if(F){
-      vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/200706_HMFregXXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
+      vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/160415_HMFreg0037_FR10306211_FR10306210_XXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
+      vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/181114_HMFregXXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
+
       mode='snv'
-      output='df'
       signature.profiles=SBS_SIGNATURE_PROFILES_V3
-      fit.method='strict'
+
+      mode='indel'
+      signature.profiles=INDEL_SIGNATURE_PROFILES
+
+      output='df'
+      fit.method='lsq'
       args.fit=NULL
       args.extract.sigs=list(vcf.filter='PASS')
+      min.mut.load='auto'
+      min.sig.abs.contrib='auto'
+      min.sig.rel.contrib=0.05
       verbose=T
    }
 
@@ -57,8 +73,23 @@ assignSigPerMut <- function(
       stop("`fit.method` must be one of the following: 'lsq','strict'")
    }
 
-   if(!(output %in% c('df','df.compact','vector'))){
-      stop("`output` must be one of the following: 'df','df.compact','vector'")
+   if(!(output %in% c('df','df.compact','details','vector'))){
+      stop("`output` must be one of the following: 'df','df.compact','details','vector'")
+   }
+
+   ## Default thresholds --------------------------------
+   if(!is.null(min.mut.load) && min.mut.load=='auto'){
+      min.mut.load <- switch(
+         mode,
+         snv=500, dbs=10, indel=50
+      )
+   }
+
+   if(!is.null(min.sig.abs.contrib) && min.sig.abs.contrib=='auto'){
+      min.sig.abs.contrib <- switch(
+         mode,
+         snv=100, dbs=5, indel=10
+      )
    }
 
    ## --------------------------------
@@ -143,25 +174,70 @@ assignSigPerMut <- function(
       rm(f_fit, args_fit)
 
       ## --------------------------------
-      if(verbose){ message('Calculating signature probabilities per mutation...') }
+      if(!is.null(min.sig.rel.contrib)){
 
-      ## Adjust signature context probabilities based on signature contributions in sample
-      sig_profiles_sample <- t(apply(sig_profiles, 1, function(i){ i * sig_contrib }))
-      colnames(sig_profiles_sample) <- colnames(sig_profiles)
-      sig_profiles_sample <- sig_profiles_sample / rowSums(sig_profiles_sample)
+         if(verbose){ message('Remove signatures with <',min.sig.rel.contrib,' rel. contribution...') }
 
-      ## Get max probability signature per context
-      context_sig_assignment <- data.frame(
-         assigned_sig = colnames(sig_profiles_sample)[ max.col(sig_profiles_sample) ],
-         sig_prob = apply(sig_profiles_sample,1,max),
-         row.names=rownames(sig_profiles_sample)
+         sig_contrib_rel <- sig_contrib/sum(sig_contrib)
+         sig_blacklist <- names(sig_contrib_rel)[ sig_contrib_rel < min.sig.rel.contrib ]
+         sig_contrib[sig_blacklist] <- 0
+      }
+
+      ## Scale sig contrib to have original total mutational load from the fitting
+      sig_contrib <- sig_contrib * (sum(context_counts) / sum(sig_contrib))
+
+      ## --------------------------------
+      if(sum(context_counts)>=min.mut.load){
+         if(verbose){ message('Calculating signature probabilities per mutation...') }
+
+         ## Adjust signature context probabilities based on signature contributions in sample
+         sig_profiles_sample <- t(apply(sig_profiles, 1, function(i){ i * sig_contrib }))
+         colnames(sig_profiles_sample) <- colnames(sig_profiles)
+         sig_profiles_sample <- sig_profiles_sample / rowSums(sig_profiles_sample)
+         sig_profiles_sample[is.na(sig_profiles_sample)] <- 0
+
+         ## Get max probability signature per context
+         context_sig_assignment <- data.frame(
+            assigned_sig = colnames(sig_profiles_sample)[ max.col(sig_profiles_sample) ],
+            sig_prob = apply(sig_profiles_sample,1,max),
+            row.names=rownames(sig_profiles_sample)
+         )
+
+         unassigned_contexts <- rownames(context_sig_assignment)[context_sig_assignment$sig_prob==0]
+         if(length(unassigned_contexts)>0){
+            warning(length(unassigned_contexts),' contexts could not be unassigned to a siganture')
+            context_sig_assignment$assigned_sig[context_sig_assignment$sig_prob==0] <- NA
+         }
+
+         ## Assign each mutation a signature based on its context
+         df$assigned_sig <- context_sig_assignment$assigned_sig[df$context]
+         df$sig_prob <- context_sig_assignment$sig_prob[df$context]
+
+         if(!is.null(min.sig.abs.contrib)){
+
+            if(verbose){ message('Unassigning signatures with <',min.sig.abs.contrib,' abs. contribution...') }
+            low_abs_contrib_sigs <- names(sig_contrib)[ sig_contrib<min.sig.abs.contrib ]
+            df$sig_prob[df$assigned_sig %in% low_abs_contrib_sigs] <- NA
+            df$assigned_sig[df$assigned_sig %in% low_abs_contrib_sigs] <- NA
+         }
+
+      } else {
+
+         if(verbose){ message('Sample had <',min.mut.load,' mutations. No signatures were assigned') }
+         df$assigned_sig <- NA
+         df$sig_prob <- NA
+      }
+
+      ## --------------------------------
+      if(verbose){ message('Calculating signature contributions from assignment...') }
+      sig_contrib_assigned <- structure(
+         rep(0,ncol(signature.profiles)),
+         names=colnames(signature.profiles)
       )
+      tab <- table(df$assigned_sig)
+      sig_contrib_assigned[names(tab)] <- tab
+      rm(tab)
 
-      ## Assign each mutation a signature based on its context
-      df <- data.frame(
-         df,
-         context_sig_assignment[df$context,]
-      )
    } else {
       if(verbose){ message('Input contains no variants, or all variants were filtered out') }
       df <- data.frame(
@@ -173,6 +249,13 @@ assignSigPerMut <- function(
          assigned_sig=character(),
          sig_prob=character()
       )
+
+      sig_contrib <- structure(
+         rep(0,ncol(signature.profiles)),
+         names=colnames(signature.profiles)
+      )
+
+      sig_contrib_assigned <- sig_contrib
    }
 
    ## --------------------------------
@@ -180,8 +263,18 @@ assignSigPerMut <- function(
 
    if(output=='df'){ return(df) }
 
-   if(output=='df.compact') {
-      return( df[,c('context','assigned_sig','sig_prob')] )
+   if(output=='df.compact'){ return( df[,c('context','assigned_sig','sig_prob')] ) }
+
+   if(output=='details'){
+      sig_contrib_summ <- cbind(fit=as.vector(sig_contrib), assigned=as.vector(sig_contrib_assigned))
+      rownames(sig_contrib_summ) <- colnames(signature.profiles)
+      return(
+         list(
+            muts=df,
+            contrib=sig_contrib_summ
+         )
+      )
+
    }
 
    structure(df$sig_prob, names=df$assigned_sig)
