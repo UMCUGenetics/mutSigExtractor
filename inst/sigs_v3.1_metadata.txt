@@ -43,7 +43,7 @@ SBS	SBS36		BERd
 SBS	SBS37		Unknown
 SBS	SBS38		UV_indirect
 SBS	SBS39		Unknown
-SBS	SBS40		Unknown
+SBS	SBS40		Age
 SBS	SBS41		Unknown
 SBS	SBS42		Haloalkanes
 SBS	SBS43	Sequencing artefact	NA
