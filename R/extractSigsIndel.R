@@ -112,7 +112,7 @@ extractSigsIndelPcawg <- function(
       ## EXcluding the REF base
       ## INcludes deleted sequence
       flank_size_r <- abs(df$mut_len) * 7
-      df$flank_seq_r <- Biostrings::getSeq(
+      df$flank_seq_r <- BSgenome::getSeq(
          x=DEFAULT_GENOME,
          names=df$chrom,
          start=df$pos+1,
@@ -121,7 +121,7 @@ extractSigsIndelPcawg <- function(
       )
 
       ## INcluding the REF base; only relevant for determining del mh
-      df$flank_seq_l <- Biostrings::getSeq(
+      df$flank_seq_l <- BSgenome::getSeq(
          x=DEFAULT_GENOME,
          names=df$chrom,
          start=df$pos-abs(df$mut_len),
