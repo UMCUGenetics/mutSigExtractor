@@ -58,14 +58,19 @@ extractSigsIndelPcawg <- function(
    signature.profiles=INDEL_SIGNATURE_PROFILES, verbose=F, ...
 ){
 
-   #vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO218019-from-jar//purple25/DO218019T.purple.somatic.vcf.gz'
-   #vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO222275-from-jar//purple25/DO222275T.purple.somatic.vcf.gz'
+   # if(F){
+   #    vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO218019-from-jar//purple25/DO218019T.purple.somatic.vcf.gz'
+   #    vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO222275-from-jar//purple25/DO222275T.purple.somatic.vcf.gz'
+   #    vcf.file='/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/test/DKFZ-28GKT1.purple.somatic.vcf.gz'
+   #    ref.genome=BSgenome.Hsapiens.UCSC.hg38
+   # }
 
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
       df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
       #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS', keep.chroms=c(1:22,'X'))
+      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS')
    }
 
    ## Filter variants
@@ -112,8 +117,10 @@ extractSigsIndelPcawg <- function(
       ## EXcluding the REF base
       ## INcludes deleted sequence
       flank_size_r <- abs(df$mut_len) * 7
+      chrom_ends <- unname(seqlengths(ref.genome)[df$chrom])
+
       df$flank_seq_r <- BSgenome::getSeq(
-         x=DEFAULT_GENOME,
+         x=ref.genome,
          names=df$chrom,
          start=df$pos+1,
          end  =df$pos+1+flank_size_r,
@@ -122,7 +129,7 @@ extractSigsIndelPcawg <- function(
 
       ## INcluding the REF base; only relevant for determining del mh
       df$flank_seq_l <- BSgenome::getSeq(
-         x=DEFAULT_GENOME,
+         x=ref.genome,
          names=df$chrom,
          start=df$pos-abs(df$mut_len),
          end  =df$pos,
