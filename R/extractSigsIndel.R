@@ -117,7 +117,6 @@ extractSigsIndelPcawg <- function(
       ## EXcluding the REF base
       ## INcludes deleted sequence
       flank_size_r <- abs(df$mut_len) * 7
-      chrom_ends <- unname(seqlengths(ref.genome)[df$chrom])
 
       df$flank_seq_r <- BSgenome::getSeq(
          x=ref.genome,
