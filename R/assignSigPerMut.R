@@ -12,7 +12,7 @@
 #' @param vcf.file Path to the vcf file
 #' @param df A dataframe containing the columns: chrom, pos, ref, alt. Alternative input option to
 #' vcf.file
-#' @param mode Can be 'snv','sbs','indel' or 'dbs'. `mode` defines which `extractSigs*()` function
+#' @param mode Can be 'snv','sbs','indel' or 'dbs'. `mode` defines which `extractSigs` function
 #' to use. Additionally, if `signature.profiles` is unspecified, the correct signature profile
 #' matrix will be automatically chosen
 #' @param output Can be 'df' (a dataframe with chrom, pos, ref, alt, context, assigned_sig, sig_prob),
@@ -20,10 +20,10 @@
 #' names are assigned_sig, and values are sig_prob).
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are the mutational signatures.
-#' @param args.extract.sigs A list of args that can be passed to the `extractSigs*()` functions
+#' @param args.extract.sigs A list of args that can be passed to the `extractSigs` functions
 #' @param fit.method Can be 'lsq' or 'strict'. Method for fitting context counts to signature
 #' profiles. See documentation for `fitToSignatures()` for more details
-#' @param args.fit A list of args that can be passed to the `fitToSignatures*()` functions
+#' @param args.fit A list of args that can be passed to the `fitToSignatures` functions
 #' @param min.mut.load Samples with fewer mutations than this value will have no mutations assigned
 #' to any signatures (all mutations assigned as NA)
 #' @param min.sig.abs.contrib Mutations attributed to signatures with absolute contribution lower
