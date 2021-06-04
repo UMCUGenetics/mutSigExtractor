@@ -10,7 +10,7 @@
 fitToSignatures(
   mut.context.counts,
   signature.profiles,
-  use.r.implementation = T,
+  use.r.implementation = USE_FIT_TO_SIGNATURES_R,
   verbose = F
 )
 
@@ -21,7 +21,7 @@ fitToSignaturesStrict(
   signature.profiles,
   max.delta = 0.004,
   detailed.output = F,
-  use.r.implementation = T,
+  use.r.implementation = USE_FIT_TO_SIGNATURES_R,
   verbose = F
 )
 

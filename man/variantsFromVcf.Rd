@@ -35,7 +35,7 @@ need to be merged into one row for proper function of downstream mutSigExtractor
 \item{verbose}{Print progress messages?}
 }
 \value{
-A data frame containing the relevant variant info for extracting the indicated signature type
+A data frame with each vcf field as a column
 }
 \description{
 Extract relevant variant info for extracting SNV, indel, and SV signatures.
