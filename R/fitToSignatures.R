@@ -120,6 +120,16 @@ lsqnonneg.matrix <- function(mut.context.counts, signature.profiles, verbose=F){
 lsqnonneg.data.frame <- lsqnonneg.matrix
 
 ####################################################################################################
+if( 'NNLM' %in% installed.packages() ){
+   USE_FIT_TO_SIGNATURES_R <- FALSE
+} else {
+   USE_FIT_TO_SIGNATURES_R <- TRUE
+   message(
+      'NNLM package not installed. A (slow) R implementation will be used for fitting mutation contexts to signatures. ',
+      '\nThe fast C++ implementation from NNLM is recommended when fitting context matrices with many samples.'
+   )
+}
+
 #' Linear least-squares (non-negative) fitting
 #'
 #' @rdname fitToSignatures
@@ -157,12 +167,15 @@ lsqnonneg.data.frame <- lsqnonneg.matrix
 #' signature). If a matrix is provided, a matrix of absolute contributions is returned
 #' @export
 #'
-fitToSignatures <- function(mut.context.counts, signature.profiles, use.r.implementation=T, verbose=F){
-   if(F){
-      mut.context.counts=context_counts
-      mut.context.counts=contexts[1:10,]
-      signature.profiles=INDEL_SIGNATURE_PROFILES
-   }
+fitToSignatures <- function(
+   mut.context.counts, signature.profiles,
+   use.r.implementation=USE_FIT_TO_SIGNATURES_R, verbose=F
+){
+   # if(F){
+   #    mut.context.counts=context_counts
+   #    mut.context.counts=contexts[1:10,]
+   #    signature.profiles=INDEL_SIGNATURE_PROFILES
+   # }
 
    ## Checks --------------------------------
    context_names <- if(is.vector(mut.context.counts)){
@@ -211,16 +224,16 @@ fitToSignaturesFast <- function(...){
 #' @rdname fitToSignatures
 fitToSignaturesStrict <- function(
    mut.context.counts, signature.profiles, max.delta=0.004,
-   detailed.output=F, use.r.implementation=T, verbose=F
+   detailed.output=F, use.r.implementation=USE_FIT_TO_SIGNATURES_R, verbose=F
 ){
 
-   if(F){
-      mut.context.counts=context_counts
-      mut.context.counts=contexts$dbs[1,]
-      signature.profiles=sig_profiles
-      max.delta=0.004
-      verbose=T
-   }
+   # if(F){
+   #    mut.context.counts=context_counts
+   #    mut.context.counts=contexts$dbs[1,]
+   #    signature.profiles=sig_profiles
+   #    max.delta=0.004
+   #    verbose=T
+   # }
 
    ## Checks --------------------------------
    context_names <- if(is.vector(mut.context.counts)){
