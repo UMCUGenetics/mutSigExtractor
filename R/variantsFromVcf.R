@@ -13,7 +13,7 @@
 #' need to be merged into one row for proper function of downstream mutSigExtractor functions.
 #' @param verbose Print progress messages?
 #'
-#' @return A data frame containing the relevant variant info for extracting the indicated signature type
+#' @return A data frame with each vcf field as a column
 #' @export
 variantsFromVcf <- function(
    vcf.file, ref.genome=DEFAULT_GENOME, keep.chroms=NULL,
