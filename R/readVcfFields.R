@@ -9,7 +9,6 @@
 #' @examples
 #' readVcfFields('/path/to/vcf', fields=c('CHROM','POS','REF','ALT'))
 #' readVcfFields('/path/to/vcf', fields=c(1,2,4,5))
-
 readVcfFields <- function(vcf.file, fields=NULL){
 
    ## Scan for the header line
@@ -49,25 +48,26 @@ readVcfFields <- function(vcf.file, fields=NULL){
 #' @param v A character vector of the INFO field, with each item being a line of the INFO field
 #' @param keys A character vector of the names of the INFO field values to retrieve
 #'
-#' @return A character matrix containing the key names and corresponding values
+#' @return A character vector (if 1 key was provided) or dataframe (if >1 key was provided)
+#' containing the key names and corresponding values
 #' @export
 getInfoValues <- function(v, keys){
    #v=vcf$info
-   l <- strsplit(v,';')
-   l <- lapply(l, function(i){
-      do.call(rbind,strsplit(i,'='))
-   })
+   #keys=c('SUBCL','PURPLE_CN')
+   require(stringr)
+   main <- function(x, key){
+      #key='PURPLE_CN'
+      #str_extract(x, paste0(key,'=.+?;'))
+      x <- str_extract(x, paste0(key,'=.+?;'))
+      x <- str_replace(x,'.*=','')
+      str_replace(x,';','')
+   }
 
-   out <- do.call(rbind,lapply(l, function(i){
-      #i=l[[1]]
-      v <- i[match(keys, i[,1]),2]
-      if(length(v)==0){
-         return(rep(NA,length(keys)))
-      }
-      return(v)
-   }))
+   if(length(keys)==1){
+      return(main(v, keys))
+   }
 
-   colnames(out) <- keys
-
-   return(as.data.frame(out, stringsAsFactors=F))
+   out <- lapply(keys, function(i){ main(v, i) })
+   names(out) <- keys
+   as.data.frame(out)
 }
