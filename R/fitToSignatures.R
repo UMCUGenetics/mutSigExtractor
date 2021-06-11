@@ -169,7 +169,8 @@ if( 'NNLM' %in% installed.packages() ){
 #'
 fitToSignatures <- function(
    mut.context.counts, signature.profiles,
-   use.r.implementation=USE_FIT_TO_SIGNATURES_R, verbose=F
+   use.r.implementation=USE_FIT_TO_SIGNATURES_R,
+   verbose=F
 ){
    # if(F){
    #    mut.context.counts=context_counts
@@ -199,13 +200,14 @@ fitToSignatures <- function(
 
    ## Main --------------------------------
    if(use.r.implementation){
-      lsqnonneg(mut.context.counts, signature.profiles)
+      return( lsqnonneg(mut.context.counts, signature.profiles) )
+   }
+
+   if(is.vector(mut.context.counts)){
+      mut.context.counts <- matrix(mut.context.counts, ncol=1)
+      NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients[,1]
    } else {
-      if(is.vector(mut.context.counts)){
-         mut.context.counts <- matrix(mut.context.counts, ncol=1)
-      } else {
-         mut.context.counts <- t(mut.context.counts)
-      }
+      mut.context.counts <- t(mut.context.counts)
       t( NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients )
    }
 }
@@ -303,8 +305,6 @@ fitToSignaturesStrict <- function(
    ## --------------------------------
    if(verbose){ message('Performing signature selection per sample...') }
 
-   cosSim <- function(x, y) { sum(x*y)/sqrt(sum(x^2)*sum(y^2)) }
-
    n_sigs <- ncol(my_signatures_total)
    n_samples <- ncol(mut.context.counts)
 
@@ -348,7 +348,7 @@ fitToSignaturesStrict <- function(
          fit_res$contribution <- f_fit(mut_mat_sample, my_signatures)
          fit_res$reconstructed <- my_signatures %*% fit_res$contribution
 
-         sim <- cosSim(fit_res$reconstructed[,1], mut_mat_sample[,1])
+         sim <- cosSim.default(fit_res$reconstructed[,1], mut_mat_sample[,1])
          sims[[1]] <- sim
 
          ## Sequentially remove the signature with the lowest contribution
@@ -368,7 +368,7 @@ fitToSignaturesStrict <- function(
             fit_res$contribution <- f_fit(mut_mat_sample, signatures_sel)
             fit_res$reconstructed <- signatures_sel %*% fit_res$contribution
 
-            sim_new <- cosSim(fit_res$reconstructed, mut_mat_sample)
+            sim_new <- cosSim.default(fit_res$reconstructed, mut_mat_sample)
 
             if(is.na(sim_new)){
                sim_new <- 0
