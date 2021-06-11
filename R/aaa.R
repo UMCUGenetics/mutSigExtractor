@@ -76,3 +76,47 @@ INDEL_CONTEXTS <- (function(){
 
    c(homopolymer_contexts,del_rep_contexts,ins_rep_contexts,del_mh_contexts)
 })()
+
+## DBS context types --------------------------------
+DBS_TYPES <- as.data.frame(
+   matrix(
+      c(
+         'AC','AC>CA','GT>TG',
+         'AC','AC>CG','GT>CG',
+         'AC','AC>CT','GT>AG',
+         'AC','AC>GA','GT>TC',
+         'AC','AC>GG','GT>CC',
+         'AC','AC>GT','GT>AC',
+         'AC','AC>TA','GT>TA',
+         'AC','AC>TG','GT>CA',
+         'AC','AC>TT','GT>AA',
+         'AT','AT>CA','AT>TG',
+         'AT','AT>CC','AT>GG',
+         'AT','AT>CG','AT>CG',
+         'AT','AT>GA','AT>TC',
+         'AT','AT>GC','AT>GC',
+         'AT','AT>TA','AT>TA',
+         'CC','CC>AA','GG>TT',
+         'CC','CC>AG','GG>CT',
+         'CC','CC>AT','GG>AT',
+         'CC','CC>GA','GG>TC',
+         'CC','CC>GG','GG>CC',
+         'CC','CC>GT','GG>AC',
+         'CC','CC>TA','GG>TA',
+         'CC','CC>TG','GG>CA',
+         'CC','CC>TT','GG>AA',
+         'CG','CG>AT','CG>AT',
+         'CG','CG>GC','CG>GC',
+         'CG','CG>GT','CG>AC',
+         'CG','CG>TA','CG>TA',
+         'CG','CG>TC','CG>GA',
+         'CG','CG>TT','CG>AA',
+         'CT','CT>AA','AG>TT',
+         'CT','CT>AC','AG>GT',
+         'CT','CT>AG','AG>CT',
+         'CT','CT>GA','AG>TC',
+         'CT','CT>GC','AG>GC'
+      ),
+      ncol=3, byrow=T, dimnames=list(NULL, c('ref','context','context_rev_comp'))
+   )
+)
