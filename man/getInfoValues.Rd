@@ -12,7 +12,8 @@ getInfoValues(v, keys)
 \item{keys}{A character vector of the names of the INFO field values to retrieve}
 }
 \value{
-A character matrix containing the key names and corresponding values
+A character vector (if 1 key was provided) or dataframe (if >1 key was provided)
+containing the key names and corresponding values
 }
 \description{
 Get values from INFO field

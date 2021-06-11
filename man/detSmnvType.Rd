@@ -4,12 +4,14 @@
 \alias{detSmnvType}
 \title{Determine SMNV type from REF and ALT}
 \usage{
-detSmnvType(ref, alt)
+detSmnvType(ref, alt, as.factor = FALSE)
 }
 \arguments{
 \item{ref}{A character vector of the REF sequences}
 
 \item{alt}{A character vector of the ALT sequences}
+
+\item{as.factor}{Return a factor instead of character vector?}
 }
 \value{
 A character vector indicating: snv, dbs, indel, mnv
