@@ -19,4 +19,5 @@ Suggests:
 	BSgenome.Hsapiens.UCSC.hg19,
 	NNLM,
 	reshape2,
-	ggplot2
+	ggplot2,
+	stringr
