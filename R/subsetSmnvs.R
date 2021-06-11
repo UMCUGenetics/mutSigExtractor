@@ -2,11 +2,12 @@
 #'
 #' @param ref A character vector of the REF sequences
 #' @param alt A character vector of the ALT sequences
+#' @param as.factor Return a factor instead of character vector?
 #'
 #' @return A character vector indicating: snv, dbs, indel, mnv
 #' @export
 #'
-detSmnvType <- function(ref, alt){
+detSmnvType <- function(ref, alt, as.factor=FALSE){
 
    #ref=muts$REF
    #alt=muts$ALT
@@ -23,6 +24,10 @@ detSmnvType <- function(ref, alt){
    out[ref_len==1 & alt_len==1] <- 'snv'
    out[ref_len==2 & alt_len==2] <- 'dbs'
    out[(ref_len==1 & alt_len>1) | (ref_len>1 & alt_len==1)] <- 'indel'
+
+   if(as.factor){
+      out <- factor(out, levels=c('snv','dbs','indel','mnv'))
+   }
 
    return(out)
 }
