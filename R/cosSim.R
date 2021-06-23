@@ -46,16 +46,17 @@ cosSim.default <- function(x, y){
 #' @export
 cosSim.matrix <- function(x, y, all.vs.all=FALSE, by.row=TRUE) {
 
+   ## Convert dataframe to matrices
    ## Convert to numeric to prevent integer overflow
-   x <- matrix(as.numeric(x), nrow=nrow(x), dimnames=dimnames(x))
-   y <- matrix(as.numeric(y), nrow=nrow(y), dimnames=dimnames(y))
+   x <- matrix(as.numeric(as.matrix(x)), nrow=nrow(x), dimnames=dimnames(x))
+   y <- matrix(as.numeric(as.matrix(y)), nrow=nrow(y), dimnames=dimnames(y))
 
    if(!by.row){
       x <- t(x)
       y <- t(y)
    }
 
-   ## Compare rows of x with y 'side-by-side'
+   ## Compare rows of x with y 'side-by-side' --------------------------------
    if(!all.vs.all){
       if(!identical(dim(x), dim(y))){ stop('`x` and `y` must have the same dimensions when `all.vs.all`=FALSE') }
       return(
@@ -63,26 +64,34 @@ cosSim.matrix <- function(x, y, all.vs.all=FALSE, by.row=TRUE) {
       )
    }
 
-   ## Compare every row of x with every row of y
+   ## Compare every row of x with every row of y --------------------------------
    if(ncol(x)!=ncol(y)){
       stop(sprintf(
          '`x` and `y` must have the same number of %s when `all.vs.all`=TRUE',
          if(by.row){ 'columns' } else { 'rows' }
       ))
    }
-   apply(x, 1, function(i){
-      apply(y, 1, function(j){
-         cosSim.default(i, j)
-      })
+
+   ## Slow version
+   # apply(x, 1, function(i){
+   #    apply(y, 1, function(j){
+   #       sum(i*j)/sqrt(sum(i^2)*sum(j^2))
+   #    })
+   # })
+
+   ## Fast version
+   apply(x,1,function(i){
+      #i <- x[1,]
+      numer <- rowSums(sweep(y,2,i,'*'))
+      denom <- sqrt( sum(i^2) * rowSums(y^2) )
+      numer/denom
    })
 }
 
 #' @rdname cosSim
 #' @method cosSim data.frame
 #' @export
-cosSim.data.frame <- function(x,y){
-   x <- as.matrix(x)
-   y <- as.matrix(y)
-   cosSim.matrix(x, y)
+cosSim.data.frame <- function(...){
+   cosSim.matrix(...)
 }
 

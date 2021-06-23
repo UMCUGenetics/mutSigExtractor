@@ -11,21 +11,26 @@ cosSim(x, ...)
 
 \method{cosSim}{default}(x, y)
 
-\method{cosSim}{matrix}(x, y)
+\method{cosSim}{matrix}(x, y, all.vs.all = FALSE, by.row = TRUE)
 
-\method{cosSim}{data.frame}(x, y)
+\method{cosSim}{data.frame}(...)
 }
 \arguments{
 \item{x}{A numeric vector or matrix}
 
 \item{y}{A numeric vector or matrix}
+
+\item{all.vs.all}{(When x and y are matrices) If TRUE, all rows of x are compared with all rows
+of y. If FALSE, rows of x are compared with rows of y 'side-by-side'}
+
+\item{by.row}{(When x and y are matrices) If TRUE, compare rows. If FALSE, compare columns}
 }
 \value{
-A numeric vector or matrix of cosine similarities
+A numeric vector or matrix
 }
 \description{
-Calculate cosine similarity between two vectors of the same length, or row-wise
-cosine similarity of two matrices of the same dimensions
+Calculate cosine similarity between two vectors of the same length, or cosine
+similarity between two matrices
 }
 \examples{
 set.seed(1)
