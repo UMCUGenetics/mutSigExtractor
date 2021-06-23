@@ -72,7 +72,7 @@ SBS	SBS88		Colibactin
 SBS	SBS89		Unknown
 SBS	SBS90		Duocarmycin
 DBS	DBS1		UV
-DBS	DBS2		Tobacco_Mutagens_Age
+DBS	DBS2		Tobacco_Age
 DBS	DBS3		POLE
 DBS	DBS4		Age
 DBS	DBS5		Platinum
