@@ -30,7 +30,7 @@ type/length contexts ('contexts')}
 \item{sample.name}{If a character is provided, the header for the output matrix will be named to
 this. If none is provided, the basename of the vcf file will be used.}
 
-\item{sv.caller}{Can be 'manta' or 'gridss'}
+\item{sv.caller}{Can be 'manta', 'gridss', or 'pcawg'}
 
 \item{half.tra.counts}{Divide translocation counts by 2?}
 
