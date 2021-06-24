@@ -134,7 +134,7 @@ getContextsSv <- function(df, sv.caller='gridss', return.raw=F, verbose=F){
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
 #' this. If none is provided, the basename of the vcf file will be used.
 #' @param half.tra.counts Divide translocation counts by 2?
-#' @param sv.caller Can be 'manta' or 'gridss'
+#' @param sv.caller Can be 'manta', 'gridss', or 'pcawg'
 #' @param sv.len.cutoffs SV length cutoff intervals as a numeric vector.
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are  the mutational signatures.
