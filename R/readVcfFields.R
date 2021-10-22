@@ -25,7 +25,7 @@ readVcfFields <- function(vcf.file, fields=NULL){
    vcf <- read.delim(
       vcf.file, skip=line_num-1,
       check.names=F, stringsAsFactors=F,
-      colClasses='character'
+      colClasses='character', na.strings=''
    )
    vcf$POS <- as.integer(vcf$POS)
 
