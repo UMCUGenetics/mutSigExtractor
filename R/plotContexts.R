@@ -59,13 +59,15 @@ MUT_SUBTYPE_COLORS <- list(
 #' to the same group. If NULL, all rows will be considered as separate samples
 #' @param y.axis.var.scale If TRUE, variable y-axis scale for each sample group will be used
 #' @param horizontal.group.labels If TRUE, horizontal text for the sample group labels will be used
+#' @param force.group.labels If TRUE, sample group label will be shown even if there is only one
+#' group
 #'
 #' @return A ggplot2 object
 #' @export
 #'
 plotContexts <- function(
    x, mut.type='auto', group='group1',
-   y.axis.var.scale=T, horizontal.group.labels=F
+   y.axis.var.scale=T, horizontal.group.labels=F, force.group.labels=F
 ){
 
    # if(F){
@@ -229,7 +231,7 @@ plotContexts <- function(
 
    ## Facetting
    scales <- if(y.axis.var.scale){ 'free' } else { 'free_x' }
-   if(is.null(group) || length(unique(group))>1){
+   if(force.group.labels || is.null(group) || length(unique(group))>1){
       p <- p + facet_grid(group~mut_subtype, scales=scales, space='free_x')
    } else {
       p <- p + facet_grid(~mut_subtype, scales=scales, space='free_x')
