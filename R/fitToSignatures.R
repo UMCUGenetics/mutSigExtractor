@@ -121,9 +121,9 @@ lsqnonneg.data.frame <- lsqnonneg.matrix
 
 ####################################################################################################
 if( 'NNLM' %in% installed.packages() ){
-   USE_FIT_TO_SIGNATURES_R <- FALSE
+   USE_LSQ_R <- FALSE
 } else {
-   USE_FIT_TO_SIGNATURES_R <- TRUE
+   USE_LSQ_R <- TRUE
    message(
       'NNLM package not installed. A (slow) R implementation will be used for fitting mutation contexts to signatures. ',
       '\nThe fast C++ implementation from NNLM is recommended when fitting context matrices with many samples.'
@@ -147,7 +147,7 @@ if( 'NNLM' %in% installed.packages() ){
 #' signatures is then returned.
 #'
 #' `fitToSignaturesFast()` and `fitToSignaturesFastStrict()` are wrappers for
-#' `fitToSignatures(..., use.r.implementation=F)` and `fitToSignaturesStrict(..., use.r.implementation=F)`
+#' `fitToSignatures(..., use.lsq.r=F)` and `fitToSignaturesStrict(..., use.lsq.r=F)`
 #' for backwards compatibility
 #'
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
@@ -158,8 +158,12 @@ if( 'NNLM' %in% installed.packages() ){
 #' @param detailed.output Only for `fitToSignaturesStrict()`. Also return results from the
 #' iterative fitting? Includes: cosine similarity between the original and reconstructed mutation
 #' context; signatures removed at each iteration. Useful for plotting fitting performance.
-#' @param use.r.implementation If TRUE, least squares fitting will be performed using the slow R
+#' @param use.lsq.r If TRUE, least squares fitting will be performed using the slow R
 #' function `lsqnonneg()`. If FALSE, the much faster NNLM::nnlm() will be used (written in C++)
+#' @param scale.contrib If TRUE, the signature contributions will be scaled so that the total
+#' signature contribution is equal to the total number of mutations. The reason for this is that
+#' when performing least squares fitting, there are unaccounted for mutations (aka residual; not
+#' necessarily an integer amount of mutations).
 #' @param verbose Show progress messages?
 #'
 #' @return If vector is provided to mut.contexts, a vector returned containing the the absolute
@@ -169,14 +173,21 @@ if( 'NNLM' %in% installed.packages() ){
 #'
 fitToSignatures <- function(
    mut.context.counts, signature.profiles,
-   use.r.implementation=USE_FIT_TO_SIGNATURES_R,
-   verbose=F
+   use.lsq.r=USE_LSQ_R, scale.contrib=T, verbose=F
 ){
-   # if(F){
-   #    mut.context.counts=context_counts
-   #    mut.context.counts=contexts[1:10,]
-   #    signature.profiles=INDEL_SIGNATURE_PROFILES
-   # }
+   if(F){
+      contexts <- readRDS('/Users/lnguyen/hpc/cuppen/projects/P0025_PCAWG_HMF/passengers/processed/mut_contexts/matrices/contexts_merged.rds')
+
+      mut.context.counts=contexts$snv[1,]
+      #mut.context.counts=as.matrix(contexts$snv)[1:10,]
+      signature.profiles=SBS_SIGNATURE_PROFILES_V3
+      use.lsq.r=F
+      scale.contrib=T
+      verbose=T
+
+      mut.context.counts=contexts[[i]]
+      signature.profiles=sig_profiles[[i]]
+   }
 
    ## Checks --------------------------------
    context_names <- if(is.vector(mut.context.counts)){
@@ -198,44 +209,63 @@ fitToSignatures <- function(
       warning("Context names of mut.context.counts and signature.profiles do not match. Fitting may not be correct.")
    }
 
-   ## Main --------------------------------
-   if(use.r.implementation){
-      return( lsqnonneg(mut.context.counts, signature.profiles) )
+   ## Least squares fitting --------------------------------
+   if(use.lsq.r){
+      sig_contrib <- lsqnonneg(mut.context.counts, signature.profiles)
    }
 
    if(is.vector(mut.context.counts)){
-      mut.context.counts <- matrix(mut.context.counts, ncol=1)
-      NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients[,1]
+      sig_contrib <- NNLM::nnlm(
+         signature.profiles,
+         matrix(mut.context.counts, ncol=1)
+      )$coefficients[,1]
    } else {
-      mut.context.counts <- t(mut.context.counts)
-      t( NNLM::nnlm(signature.profiles, mut.context.counts)$coefficients )
+      sig_contrib <- t(
+         NNLM::nnlm(
+            signature.profiles,
+            t(mut.context.counts)
+         )$coefficients
+      )
    }
+
+   if(!scale.contrib){ return(sig_contrib) }
+
+   ## Scale to total mutational load --------------------------------
+   if(is.vector(mut.context.counts)){
+      sig_contrib <- sig_contrib * (sum(mut.context.counts) / sum(sig_contrib))
+   } else {
+      sig_contrib <- sig_contrib * rowSums(mut.context.counts) / rowSums(sig_contrib)
+   }
+
+   return(sig_contrib)
 }
 
 #' @rdname fitToSignatures
 fitToSignaturesFast <- function(...){
-   fitToSignatures(..., use.r.implementation=F)
+   fitToSignatures(..., use.lsq.r=F)
 }
 
-#fitToSignaturesStrict(context_counts, SBS_SIGNATURE_PROFILES_V3, use.r.implementation=F)
-#fitToSignaturesStrict(context_counts, SBS_SIGNATURE_PROFILES_V3, use.r.implementation=T)
+#fitToSignaturesStrict(context_counts, SBS_SIGNATURE_PROFILES_V3, use.lsq.r=F)
+#fitToSignaturesStrict(context_counts, SBS_SIGNATURE_PROFILES_V3, use.lsq.r=T)
 
-#fitToSignaturesStrict(contexts[1:10,], SBS_SIGNATURE_PROFILES_V3, use.r.implementation=F)
-#fitToSignaturesStrict(contexts[1:10,], SBS_SIGNATURE_PROFILES_V3, use.r.implementation=T)
+#fitToSignaturesStrict(contexts[1:10,], SBS_SIGNATURE_PROFILES_V3, use.lsq.r=F)
+#fitToSignaturesStrict(contexts[1:10,], SBS_SIGNATURE_PROFILES_V3, use.lsq.r=T)
 
 #' @rdname fitToSignatures
 fitToSignaturesStrict <- function(
    mut.context.counts, signature.profiles, max.delta=0.004,
-   detailed.output=F, use.r.implementation=USE_FIT_TO_SIGNATURES_R, verbose=F
+   detailed.output=F, use.lsq.r=USE_LSQ_R, scale.contrib=T, verbose=F
 ){
 
-   # if(F){
-   #    mut.context.counts=context_counts
-   #    mut.context.counts=contexts$dbs[1,]
-   #    signature.profiles=sig_profiles
-   #    max.delta=0.004
-   #    verbose=T
-   # }
+   if(F){
+      contexts <- readRDS('/Users/lnguyen/hpc/cuppen/projects/P0025_PCAWG_HMF/passengers/processed/mut_contexts/matrices/contexts_merged.rds')
+
+      mut.context.counts=contexts$snv[1,]
+      #mut.context.counts=as.matrix(contexts$snv)[1:10,]
+      signature.profiles=SBS_SIGNATURE_PROFILES_V3
+      max.delta=0.004
+      verbose=T
+   }
 
    ## Checks --------------------------------
    context_names <- if(is.vector(mut.context.counts)){
@@ -260,7 +290,7 @@ fitToSignaturesStrict <- function(
    ## Choose R or C++ implementation of lsq fitting --------------------------------
    #mut.context.counts=context_counts
    #mut.context.counts=contexts[1:10,]
-   #use.r.implementation=F
+   #use.lsq.r=F
 
    if(is.vector(mut.context.counts)){
       mut.context.counts <- matrix(mut.context.counts, ncol=1, dimnames=list(names(mut.context.counts), NULL))
@@ -268,7 +298,7 @@ fitToSignaturesStrict <- function(
       mut.context.counts <- t(mut.context.counts)
    }
 
-   if(use.r.implementation){
+   if(use.lsq.r){
       if(verbose){ message('Using R implementation for least squares fitting...') }
       if(ncol(mut.context.counts)==1){
          f_fit <- function(mut.context.counts, signature.profiles){
@@ -407,11 +437,17 @@ fitToSignaturesStrict <- function(
    if(verbose==2){ message('\n') }
    if(verbose){ message('Returning output...') }
 
+   ## Signature contributions
    m_contribs <- do.call(rbind, l_contribs)
    rownames(m_contribs) <- colnames(mut.context.counts)
 
+   if(scale.contrib){
+      m_contribs <- m_contribs * colSums(mut.context.counts) / rowSums(m_contribs)
+   }
+
    if(!detailed.output){ return(m_contribs) }
 
+   ## Stats from removing ref signatures
    m_sim <- do.call(rbind, l_sims)
    rownames(m_sim) <- colnames(mut.context.counts)
 
@@ -428,5 +464,5 @@ fitToSignaturesStrict <- function(
 
 #' @rdname fitToSignatures
 fitToSignaturesFastStrict <- function(...){
-   fitToSignaturesStrict(..., use.r.implementation=F)
+   fitToSignaturesStrict(..., use.lsq.r=F)
 }
