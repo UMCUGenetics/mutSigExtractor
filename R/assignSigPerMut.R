@@ -25,9 +25,11 @@
 #' profiles. See documentation for `fitToSignatures()` for more details
 #' @param args.fit A list of args that can be passed to the `fitToSignatures*()` functions
 #' @param min.mut.load Samples with fewer mutations than this value will have no mutations assigned
-#' to any signatures (all mutations assigned as NA)
+#' to any signatures (all mutations assigned as NA). If 'auto', one of the following values will be
+#' selected based on the mut type (i.e. `mode`): snv=500, dbs=10, indel=50
 #' @param min.sig.abs.contrib Mutations attributed to signatures with absolute contribution lower
-#' than this value will be assigned NA instead
+#' than this value will be assigned NA instead. If 'auto', one of the following values will be
+#' selected based on the mut type (i.e. `mode`): snv=100, dbs=5, indel=10
 #' @param min.sig.rel.contrib Signatures with low relative contribution (less than this value, e.g.
 #' 0.05 for 5 percent) of will be excluded from the assignment.
 #' @param verbose Print progress messages?
@@ -65,9 +67,12 @@ assignSigPerMut <- function(
    }
 
    ## Checks --------------------------------
-   if(!(mode %in% c('snv','sbs','indel','dbs'))){
-      stop("`mode` must be one of the following: 'snv','sbs','indel', 'dbs'")
+   mode <- tolower(mode)
+   if(!(mode %in% c('snv','sbs','indel','id','dbs'))){
+      stop("`mode` must be one of the following: 'snv','sbs','indel','id,'dbs'")
    }
+   if(mode=='id'){ mode <- 'indel' }
+   if(mode=='sbs'){ mode <- 'snv' }
 
    if(!(fit.method %in% c('lsq','strict'))){
       stop("`fit.method` must be one of the following: 'lsq','strict'")
@@ -97,7 +102,6 @@ assignSigPerMut <- function(
    f_extract_sigs <- switch(
       mode,
       snv=extractSigsSnv,
-      sbs=extractSigsSnv,
       dbs=extractSigsDbs,
       indel=extractSigsIndel
    )
@@ -124,6 +128,17 @@ assignSigPerMut <- function(
    rm(f_extract_sigs, args_extract_sigs)
 
    ## --------------------------------
+   if(!is.null(signature.profiles)){
+      sig_profiles <- signature.profiles
+   } else {
+      sig_profiles <- switch(
+         mode,
+         snv=SBS_SIGNATURE_PROFILES_V3,
+         dbs=DBS_SIGNATURE_PROFILES,
+         indel=INDEL_SIGNATURE_PROFILES
+      )
+   }
+
    if(nrow(df)!=0){
 
       ## Select only relevant columns
@@ -139,24 +154,12 @@ assignSigPerMut <- function(
 
       ## --------------------------------
       if(verbose){ message('Fitting context counts to signature profiles...') }
-      if(!is.null(signature.profiles)){
-         sig_profiles <- signature.profiles
-      } else {
-         sig_profiles <- switch(
-            mode,
-            snv=SBS_SIGNATURE_PROFILES_V3,
-            sbs=SBS_SIGNATURE_PROFILES_V3,
-            dbs=DBS_SIGNATURE_PROFILES,
-            indel=INDEL_SIGNATURE_PROFILES
-         )
-      }
-      #sig_profiles <- sig_profiles / colSums(sig_profiles) ## Force total prob to be 1
 
       ## Force context names and order to be the same in sig profile matrix
       if(!all(names(context_counts) %in% rownames(sig_profiles))){
          stop('Extracted contexts do not match `rownames(signature.profiles)`. Maybe the wrong `mode` was selected?')
       }
-      sig_profiles <- sig_profiles[names(context_counts),]
+      sig_profiles <- sig_profiles[names(context_counts),,drop=F]
 
       f_fit <- switch(
          fit.method,
@@ -171,6 +174,8 @@ assignSigPerMut <- function(
       args_fit <- args_fit[ !duplicated(names(args_fit)) ]
 
       sig_contrib <- do.call(f_fit, args_fit)
+      sig_contrib[is.na(sig_contrib)] <- 0 ## Signatures with all 0 probs leads to NA contributions
+
       rm(f_fit, args_fit)
 
       ## --------------------------------
@@ -179,20 +184,30 @@ assignSigPerMut <- function(
          if(verbose){ message('Remove signatures with <',min.sig.rel.contrib,' rel. contribution...') }
 
          sig_contrib_rel <- sig_contrib/sum(sig_contrib)
+         sig_contrib_rel[is.na(sig_contrib_rel)] <- 0
+
          sig_blacklist <- names(sig_contrib_rel)[ sig_contrib_rel < min.sig.rel.contrib ]
          sig_contrib[sig_blacklist] <- 0
       }
 
-      ## Scale sig contrib to have original total mutational load from the fitting
-      sig_contrib <- sig_contrib * (sum(context_counts) / sum(sig_contrib))
+      # ## Scale sig contrib to have original total mutational load from the fitting
+      # sig_contrib <- sig_contrib * (sum(context_counts) / sum(sig_contrib))
 
       ## --------------------------------
       if(sum(context_counts)>=min.mut.load){
          if(verbose){ message('Calculating signature probabilities per mutation...') }
 
          ## Adjust signature context probabilities based on signature contributions in sample
-         sig_profiles_sample <- t(apply(sig_profiles, 1, function(i){ i * sig_contrib }))
-         colnames(sig_profiles_sample) <- colnames(sig_profiles)
+         sig_profiles_sample <- apply(sig_profiles, 1, function(i){ i * sig_contrib })
+
+         ## Convert to context x signature matrix
+         ## Avoid converting to vector when there is only one signature
+         sig_profiles_sample <- matrix(
+            sig_profiles_sample,
+            ncol=ncol(sig_profiles), byrow=T,
+            dimnames=list(rownames(sig_profiles), colnames(sig_profiles))
+         )
+
          sig_profiles_sample <- sig_profiles_sample / rowSums(sig_profiles_sample)
          sig_profiles_sample[is.na(sig_profiles_sample)] <- 0
 
@@ -231,8 +246,8 @@ assignSigPerMut <- function(
       ## --------------------------------
       if(verbose){ message('Calculating signature contributions from assignment...') }
       sig_contrib_assigned <- structure(
-         rep(0,ncol(signature.profiles)),
-         names=colnames(signature.profiles)
+         rep(0,ncol(sig_profiles)),
+         names=colnames(sig_profiles)
       )
       tab <- table(df$assigned_sig)
       sig_contrib_assigned[names(tab)] <- tab
@@ -251,8 +266,8 @@ assignSigPerMut <- function(
       )
 
       sig_contrib <- structure(
-         rep(0,ncol(signature.profiles)),
-         names=colnames(signature.profiles)
+         rep(0,ncol(sig_profiles)),
+         names=colnames(sig_profiles)
       )
 
       sig_contrib_assigned <- sig_contrib
