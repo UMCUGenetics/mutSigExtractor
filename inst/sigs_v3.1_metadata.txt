@@ -36,7 +36,7 @@ SBS	SBS29		Tobacco_chewing
 SBS	SBS30		BERd
 SBS	SBS31		Platinum
 SBS	SBS32		Azathioprine
-SBS	SBS33	Only in few samples	Unknown
+SBS	SBS33		Unknown
 SBS	SBS34		Unknown
 SBS	SBS35		Platinum
 SBS	SBS36		BERd
