@@ -240,7 +240,7 @@ plotContexts <- function(
    ## Main
    p <- p +
       geom_bar(aes(fill=mut_subtype_color),stat='identity') +
-      scale_fill_manual(values=colors, name='Mutation type', guide=F) +
+      scale_fill_manual(values=colors, name='Mutation type', guide='none') +
       scale_x_discrete(labels=context_simple_names)
 
    ## Error bars
