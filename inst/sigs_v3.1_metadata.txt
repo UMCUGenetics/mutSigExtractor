@@ -82,8 +82,8 @@ DBS	DBS8		Unknown
 DBS	DBS9		Age
 DBS	DBS10		MMRd
 DBS	DBS11		APOBEC_Age
-Indel	ID1		MMRd_Age
-Indel	ID2		MMRd_Age
+Indel	ID1		Age_MMRd
+Indel	ID2		Age_MMRd
 Indel	ID3		Tobacco
 Indel	ID4		Unknown
 Indel	ID5		Age
