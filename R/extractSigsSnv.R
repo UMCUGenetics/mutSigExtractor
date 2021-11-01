@@ -39,7 +39,7 @@ extractSigsSnv <- function(
    )
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='snv', verbose=verbose)
+   df <- subsetSmnvs(df, type='snv', ref.genome=ref.genome, verbose=verbose)
 
    ## Main --------------------------------
    if(nrow(df)!=0){ ## Don't process empty vcfs

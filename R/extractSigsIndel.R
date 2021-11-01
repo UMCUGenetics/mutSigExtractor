@@ -74,7 +74,7 @@ extractSigsIndelPcawg <- function(
    }
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='indel', verbose=verbose)
+   df <- subsetSmnvs(df, type='indel', ref.genome=ref.genome, verbose=verbose)
 
    context_counts <- structure(
       rep(0, length(INDEL_CONTEXTS)),
@@ -318,7 +318,7 @@ extractSigsIndelChord <- function(
    }
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='indel', verbose=verbose)
+   df <- subsetSmnvs(df, type='indel', ref.genome=ref.genome, verbose=verbose)
 
    if(verbose){ message('Initializing indel signature output vector...') }
    indel_sig_names <- c(

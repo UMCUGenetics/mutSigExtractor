@@ -34,7 +34,7 @@ extractSigsDbs <- function(
    }
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='dbs', verbose=verbose)
+   df <- subsetSmnvs(df, type='dbs', ref.genome=ref.genome, verbose=verbose)
 
    if(verbose){ message('Initializing SNV signature output vector...') }
    context_counts <- structure(
