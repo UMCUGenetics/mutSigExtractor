@@ -13,34 +13,21 @@
 
 
 # ## Code to create RData --------
-# df <- openxlsx::read.xlsx(
-#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/inst/COSMIC_Mutational_Signatures_v3.1.xlsx',
-#    sheet='SBS_GRCh37'
-# )
+# df <- read.table('/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/data/raw/COSMIC_v3.1_SBS_GRCh37.txt',sep='\t', header=1)
+# df <- df[order(stringr::str_extract(df$Type,'\\w>\\w')),]
 #
-# df$Type2 <- paste0(
-#    substring(df$Subtype,1,1),
-#    '[',
-#    df$Type,
-#    ']',
-#    substring(df$Subtype,3,3)
-# )
-#
-# df <- df[order(df$Type),]
-#
-# # identical(
-# #    df$Type2,
-# #    rownames(SBS_SIGNATURE_PROFILES_V3)
-# # )
 #
 # m <- df[,grep('^SBS',colnames(df))]
-# rownames(m) <- df$Type2
+# rownames(m) <- df$Type
 #
-# excl_sigs <- read.delim(
-#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/inst/sigs_v3.1_exclusion.txt'
+# sig_metadata <- read.delim(
+#    '/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/inst/sigs_v3.1_metadata.txt'
 # )
-# excl_sigs <- subset(excl_sigs, nchar(exclude_reason)!=0, sig_name, drop=T)
+# excl_sigs <- subset(sig_metadata, nchar(exclude_reason)!=0, sig_name, drop=T)
 # m <- m[,!(colnames(m) %in% excl_sigs)]
+#
+# #m[,'SBS1'] - SBS_SIGNATURE_PROFILES_V3[,'SBS1']
+# #cbind(rownames(m), rownames(SBS_SIGNATURE_PROFILES_V3))
 #
 # SBS_SIGNATURE_PROFILES_V3 <- m
 # save(
