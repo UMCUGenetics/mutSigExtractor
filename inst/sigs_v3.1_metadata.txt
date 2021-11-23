@@ -14,11 +14,11 @@ SBS	SBS9		AID_noncanon
 SBS	SBS10a		POLE
 SBS	SBS10b		POLE
 SBS	SBS11		Temozolomide
-SBS	SBS12		Unknown
+SBS	SBS12		Liver_associated
 SBS	SBS13		APOBEC
 SBS	SBS14		MMRd_POLE
 SBS	SBS15		MMRd
-SBS	SBS16		Unknown
+SBS	SBS16		Liver_associated
 SBS	SBS17a		ROS
 SBS	SBS17b		ROS_5FU
 SBS	SBS18		ROS
@@ -72,7 +72,7 @@ SBS	SBS88		Colibactin
 SBS	SBS89		Unknown
 SBS	SBS90		Duocarmycin
 DBS	DBS1		UV
-DBS	DBS2		Tobacco_Age
+DBS	DBS2		Tobacco_UnknownMutagens
 DBS	DBS3		POLE
 DBS	DBS4		Age
 DBS	DBS5		Platinum
