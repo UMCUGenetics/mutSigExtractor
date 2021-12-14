@@ -13,6 +13,8 @@ SBS	SBS8		Unknown
 SBS	SBS9		AID_noncanon
 SBS	SBS10a		POLE
 SBS	SBS10b		POLE
+SBS	SBS10c		POLD1_proofreading_defect
+SBS	SBS10d		POLD1_proofreading_defect
 SBS	SBS11		Temozolomide
 SBS	SBS12		Liver_associated
 SBS	SBS13		APOBEC
