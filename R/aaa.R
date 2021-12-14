@@ -24,7 +24,7 @@
 
    assign(
       'SIG_METADATA_PATH',
-      system.file('/sigs_v3.1_metadata.txt',package='mutSigExtractor'),
+      system.file('/sigs_v3.2_metadata.txt',package='mutSigExtractor'),
       envir=parent.env(environment())
    )
 }

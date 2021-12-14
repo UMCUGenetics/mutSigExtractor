@@ -71,6 +71,10 @@ SBS	SBS87		Thiopurine
 SBS	SBS88		Colibactin
 SBS	SBS89		Unknown
 SBS	SBS90		Duocarmycin
+SBS	SBS91		Unknown
+SBS	SBS92		Tobacco
+SBS	SBS93		Unknown
+SBS	SBS94		Unknown
 DBS	DBS1		UV
 DBS	DBS2		Tobacco_UnknownMutagens
 DBS	DBS3		POLE
