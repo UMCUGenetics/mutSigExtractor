@@ -4,15 +4,16 @@
 \alias{subsetSmnvs}
 \title{Subset for SNVs, DBSs, or indels}
 \usage{
-subsetSmnvs(df, type, ref.genome = DEFAULT_GENOME, verbose = F)
+subsetSmnvs(df, type, chrom.name.style = "UCSC", verbose = F)
 }
 \arguments{
 \item{df}{A dataframe containing the columns chrom, pos, ref, alt}
 
 \item{type}{Can be 'snv', 'indel', or 'dbs'}
 
-\item{ref.genome}{A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
-reference genome is indicated, it will also need to be installed.}
+\item{chrom.name.style}{A string indicating the chromosome naming style. This can be for example
+'UCSC' ('chrX') or 'NCBI' ('X'). See the documentation for `GenomeInfoDb::seqlevelsStyle()` for
+more details.}
 
 \item{verbose}{Show progress messages?}
 }

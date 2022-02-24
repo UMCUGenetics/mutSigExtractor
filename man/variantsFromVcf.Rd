@@ -6,10 +6,10 @@
 \usage{
 variantsFromVcf(
   vcf.file,
-  ref.genome = DEFAULT_GENOME,
-  keep.chroms = NULL,
   vcf.filter = NA,
   vcf.fields = c("CHROM", "POS", "REF", "ALT", "FILTER"),
+  keep.chroms = NULL,
+  chrom.name.style = "UCSC",
   merge.consecutive = F,
   verbose = F
 )
@@ -17,17 +17,18 @@ variantsFromVcf(
 \arguments{
 \item{vcf.file}{Path to the vcf file}
 
-\item{ref.genome}{A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
-reference genome is indicated, it will also need to be installed.}
+\item{vcf.filter}{A character or character vector to specifying which variants to keep,
+corresponding to the values in the vcf FILTER column}
+
+\item{vcf.fields}{A character vector specifying the vcf columns to retrieve}
 
 \item{keep.chroms}{A character vector specifying which chromosomes to keep (chromosome names
 should be in the style of the vcf). To keep autosomal and sex chromosomes for example use:
 keep.chroms=c(1:22,'X','Y')}
 
-\item{vcf.filter}{A character or character vector to specifying which variants to keep,
-corresponding to the values in the vcf FILTER column}
-
-\item{vcf.fields}{A character vector specifying the vcf columns to retrieve}
+\item{chrom.name.style}{A string indicating the chromosome naming style. This can be for example
+'UCSC' ('chrX') or 'NCBI' ('X'). See the documentation for `GenomeInfoDb::seqlevelsStyle()` for
+more details.}
 
 \item{merge.consecutive}{Some vcfs report MNVs as consecutive variants. For these vcfs, such rows
 need to be merged into one row for proper function of downstream mutSigExtractor functions.}

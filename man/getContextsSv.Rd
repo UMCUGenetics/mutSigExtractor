@@ -9,7 +9,8 @@ getContextsSv(df, sv.caller = "gridss", return.raw = F, verbose = F)
 \arguments{
 \item{df}{A dataframe containing the columns: chrom, pos, ref, alt, filter, id, info}
 
-\item{sv.caller}{Only applies when mode=='sv'. At this moment supports 'manta', 'gridss', or 'pcawg'.
+\item{sv.caller}{Only applies when mode=='sv'. At this moment supports 'manta','manta_bnd,
+'gridss', or 'pcawg'.
 Currently there is no standard to how SVs are reported in vcfs. Therefore, output from different
 callers will need to be parsed separately.}
 

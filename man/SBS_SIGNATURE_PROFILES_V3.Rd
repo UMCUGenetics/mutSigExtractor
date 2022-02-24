@@ -5,7 +5,7 @@
 \alias{SBS_SIGNATURE_PROFILES_V3}
 \title{SBS signature profiles (new; v3, May 2019)}
 \format{
-An object of class \code{data.frame} with 96 rows and 53 columns.
+An object of class \code{data.frame} with 96 rows and 60 columns.
 }
 \usage{
 data(SBS_SIGNATURE_PROFILES_V3)

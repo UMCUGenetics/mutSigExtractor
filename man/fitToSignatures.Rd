@@ -10,7 +10,8 @@
 fitToSignatures(
   mut.context.counts,
   signature.profiles,
-  use.r.implementation = USE_FIT_TO_SIGNATURES_R,
+  use.lsq.r = USE_LSQ_R,
+  scale.contrib = T,
   verbose = F
 )
 
@@ -21,7 +22,8 @@ fitToSignaturesStrict(
   signature.profiles,
   max.delta = 0.004,
   detailed.output = F,
-  use.r.implementation = USE_FIT_TO_SIGNATURES_R,
+  use.lsq.r = USE_LSQ_R,
+  scale.contrib = T,
   verbose = F
 )
 
@@ -31,8 +33,13 @@ fitToSignaturesFastStrict(...)
 \item{signature.profiles}{A matrix containing the mutational signature profiles, where rows are
 the mutation contexts and the columns are the mutational signatures.}
 
-\item{use.r.implementation}{If TRUE, least squares fitting will be performed using the slow R
+\item{use.lsq.r}{If TRUE, least squares fitting will be performed using the slow R
 function `lsqnonneg()`. If FALSE, the much faster NNLM::nnlm() will be used (written in C++)}
+
+\item{scale.contrib}{If TRUE, the signature contributions will be scaled so that the total
+signature contribution is equal to the total number of mutations. The reason for this is that
+when performing least squares fitting, there are unaccounted for mutations (aka residual; not
+necessarily an integer amount of mutations).}
 
 \item{verbose}{Show progress messages?}
 
@@ -64,6 +71,6 @@ calculated. Iterations are stopped when cosine distance > max.delta. The second-
 signatures is then returned.
 
 `fitToSignaturesFast()` and `fitToSignaturesFastStrict()` are wrappers for
-`fitToSignatures(..., use.r.implementation=F)` and `fitToSignaturesStrict(..., use.r.implementation=F)`
+`fitToSignatures(..., use.lsq.r=F)` and `fitToSignaturesStrict(..., use.lsq.r=F)`
 for backwards compatibility
 }

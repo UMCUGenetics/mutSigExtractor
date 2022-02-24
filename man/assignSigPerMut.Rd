@@ -44,10 +44,12 @@ profiles. See documentation for `fitToSignatures()` for more details}
 \item{args.fit}{A list of args that can be passed to the `fitToSignatures*()` functions}
 
 \item{min.mut.load}{Samples with fewer mutations than this value will have no mutations assigned
-to any signatures (all mutations assigned as NA)}
+to any signatures (all mutations assigned as NA). If 'auto', one of the following values will be
+selected based on the mut type (i.e. `mode`): snv=500, dbs=10, indel=50}
 
 \item{min.sig.abs.contrib}{Mutations attributed to signatures with absolute contribution lower
-than this value will be assigned NA instead}
+than this value will be assigned NA instead. If 'auto', one of the following values will be
+selected based on the mut type (i.e. `mode`): snv=100, dbs=5, indel=10}
 
 \item{min.sig.rel.contrib}{Signatures with low relative contribution (less than this value, e.g.
 0.05 for 5 percent) of will be excluded from the assignment.}

@@ -9,7 +9,8 @@ plotContexts(
   mut.type = "auto",
   group = "group1",
   y.axis.var.scale = T,
-  horizontal.group.labels = F
+  horizontal.group.labels = F,
+  force.group.labels = F
 )
 }
 \arguments{
@@ -24,6 +25,9 @@ to the same group. If NULL, all rows will be considered as separate samples}
 \item{y.axis.var.scale}{If TRUE, variable y-axis scale for each sample group will be used}
 
 \item{horizontal.group.labels}{If TRUE, horizontal text for the sample group labels will be used}
+
+\item{force.group.labels}{If TRUE, sample group label will be shown even if there is only one
+group}
 }
 \value{
 A ggplot2 object
