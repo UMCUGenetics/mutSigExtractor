@@ -29,7 +29,7 @@ extractSigsSnv <- function(
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
+      df <- variantsFromVcf(vcf.file, verbose=verbose, ...)
    }
 
    if(verbose){ message('Initializing SNV signature output vector...') }
@@ -39,10 +39,13 @@ extractSigsSnv <- function(
    )
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='snv', ref.genome=ref.genome, verbose=verbose)
+   df <- subsetSmnvs(df, type='snv', verbose=verbose)
 
    ## Main --------------------------------
    if(nrow(df)!=0){ ## Don't process empty vcfs
+      ## Convert string to variable name
+      if(is.character(ref.genome)){ ref.genome <- eval(parse(text=ref.genome)) }
+
       if(verbose){ message('Getting SNV trinucleotide contexts...') }
       df$substitution <- paste0(df$ref,'>',df$alt)
       df$tri_context = BSgenome::getSeq(
