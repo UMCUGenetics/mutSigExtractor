@@ -68,13 +68,11 @@ extractSigsIndelPcawg <- function(
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
-      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS', keep.chroms=c(1:22,'X'))
-      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS')
+      df <- variantsFromVcf(vcf.file, verbose=verbose, ...)
    }
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='indel', ref.genome=ref.genome, verbose=verbose)
+   df <- subsetSmnvs(df, type='indel', verbose=verbose)
 
    context_counts <- structure(
       rep(0, length(INDEL_CONTEXTS)),
@@ -114,6 +112,10 @@ extractSigsIndelPcawg <- function(
 
       ## --------------------------------
       if(verbose){ message("Getting the 3' and 5' flanking sequences...") }
+
+      ## Convert string to variable name
+      if(is.character(ref.genome)){ ref.genome <- eval(parse(text=ref.genome)) }
+
       ## EXcluding the REF base
       ## INcludes deleted sequence
       flank_size_r <- abs(df$mut_len) * 7
@@ -313,12 +315,11 @@ extractSigsIndelChord <- function(
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
-      #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, vcf.filter='PASS', keep.chroms=c(1:22,'X'))
+      df <- variantsFromVcf(vcf.file, verbose=verbose, ...)
    }
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='indel', ref.genome=ref.genome, verbose=verbose)
+   df <- subsetSmnvs(df, type='indel', verbose=verbose)
 
    if(verbose){ message('Initializing indel signature output vector...') }
    indel_sig_names <- c(
@@ -353,6 +354,9 @@ extractSigsIndelChord <- function(
       })
 
       ## Get REF or ALT allele for vcfs that only report one or the other --------------------------------
+      ## Convert string to variable name
+      if(is.character(ref.genome)){ ref.genome <- eval(parse(text=ref.genome)) }
+
       if(get.other.indel.allele==T){
          if(verbose){ message('Retrieving other indel allele...') }
          df_split <- lapply(
