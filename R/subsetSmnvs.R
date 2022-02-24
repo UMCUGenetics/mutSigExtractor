@@ -40,14 +40,15 @@ detSmnvType <- function(ref, alt, as.factor=FALSE){
 #'
 #' @param df A dataframe containing the columns chrom, pos, ref, alt
 #' @param type Can be 'snv', 'indel', or 'dbs'
-#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
-#' reference genome is indicated, it will also need to be installed.
+#' @param chrom.name.style A string indicating the chromosome naming style. This can be for example
+#' 'UCSC' ('chrX') or 'NCBI' ('X'). See the documentation for `GenomeInfoDb::seqlevelsStyle()` for
+#' more details.
 #' @param verbose Show progress messages?
 #'
 #' @return The filtered dataframe, or an empty dataframe if no variants exist/remain
 #' @export
 #'
-subsetSmnvs <- function(df, type, ref.genome=DEFAULT_GENOME, verbose=F){
+subsetSmnvs <- function(df, type, chrom.name.style='UCSC', verbose=F){
 
    if(length(type)!=1 | !(type %in% c('snv','indel','dbs'))){
       stop("`type` must be one of the following values: 'snv','indel','dbs'")
@@ -72,8 +73,9 @@ subsetSmnvs <- function(df, type, ref.genome=DEFAULT_GENOME, verbose=F){
       return(data.frame())
    }
 
-   #if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-   GenomeInfoDb::seqlevelsStyle(df$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
+   if(!is.null(chrom.name.style)){
+      GenomeInfoDb::seqlevelsStyle(df$chrom)<- chrom.name.style
+   }
 
    ## Select variant type --------------------------------
    df$mut_type <- detSmnvType(ref=df$ref, alt=df$alt)
