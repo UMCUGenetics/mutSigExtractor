@@ -12,29 +12,27 @@
 #' DBS contexts ('contexts'), or an annotated bed-like dataframe ('df')
 #' @param sample.name If a character is provided, the header for the output matrix will be named to
 #' this. If none is provided, the basename of the vcf file will be used.
-#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
-#' reference genome is indicated, it will also need to be installed.
 #' @param signature.profiles A matrix containing the mutational signature profiles, where rows are
 #' the mutation contexts and the columns are  the mutational signatures.
+#' @param ref.genome Deprecated. Argument only kept for compatibility.
 #' @param verbose Print progress messages?
 #'
 #' @return A 1-column matrix containing the context counts or signature contributions
 #' @export
 extractSigsDbs <- function(
    vcf.file=NULL, df=NULL, output='contexts', sample.name=NULL,
-   ref.genome=DEFAULT_GENOME, signature.profiles=DBS_SIGNATURE_PROFILES,
-   verbose=F, ...
+   signature.profiles=DBS_SIGNATURE_PROFILES, ref.genome=NULL, verbose=F, ...
 ){
 
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
-      df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose, ...)
+      df <- variantsFromVcf(vcf.file, verbose=verbose, ...)
       #df <- variantsFromVcf(vcf.file, ref.genome=ref.genome, verbose=verbose)
    }
 
    ## Filter variants
-   df <- subsetSmnvs(df, type='dbs', ref.genome=ref.genome, verbose=verbose)
+   df <- subsetSmnvs(df, type='dbs', verbose=verbose)
 
    if(verbose){ message('Initializing SNV signature output vector...') }
    context_counts <- structure(
