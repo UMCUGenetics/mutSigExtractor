@@ -1,14 +1,15 @@
 #' Extract relevant variant info for extracting SNV, indel, and SV signatures.
 #'
 #' @param vcf.file Path to the vcf file
-#' @param ref.genome A BSgenome reference genome. Default is BSgenome.Hsapiens.UCSC.hg19. If another
-#' reference genome is indicated, it will also need to be installed.
-#' @param keep.chroms A character vector specifying which chromosomes to keep (chromosome names
-#' should be in the style of the vcf). To keep autosomal and sex chromosomes for example use:
-#' keep.chroms=c(1:22,'X','Y')
 #' @param vcf.filter A character or character vector to specifying which variants to keep,
 #' corresponding to the values in the vcf FILTER column
 #' @param vcf.fields A character vector specifying the vcf columns to retrieve
+#' @param keep.chroms A character vector specifying which chromosomes to keep (chromosome names
+#' should be in the style of the vcf). To keep autosomal and sex chromosomes for example use:
+#' keep.chroms=c(1:22,'X','Y')
+#' @param chrom.name.style A string indicating the chromosome naming style. This can be for example
+#' 'UCSC' ('chrX') or 'NCBI' ('X'). See the documentation for `GenomeInfoDb::seqlevelsStyle()` for
+#' more details.
 #' @param merge.consecutive Some vcfs report MNVs as consecutive variants. For these vcfs, such rows
 #' need to be merged into one row for proper function of downstream mutSigExtractor functions.
 #' @param verbose Print progress messages?
@@ -16,10 +17,9 @@
 #' @return A data frame with each vcf field as a column
 #' @export
 variantsFromVcf <- function(
-   vcf.file, ref.genome=DEFAULT_GENOME, keep.chroms=NULL,
-   vcf.filter=NA, vcf.fields=c('CHROM','POS','REF','ALT','FILTER'),
-   merge.consecutive=F,
-   verbose=F
+   vcf.file, vcf.filter=NA, vcf.fields=c('CHROM','POS','REF','ALT','FILTER'),
+   keep.chroms=NULL, chrom.name.style='UCSC',
+   merge.consecutive=F, verbose=F
 ){
    # vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/PCAWG/final_consensus_12oct/PASS_vcfs/SNV/0009b464-b376-4fbc-8a56-da538269a02f.consensus.20160830.somatic.snv_mnv/0009b464-b376-4fbc-8a56-da538269a02f.consensus.20160830.somatic.snv_mnv_PASS.vcf.gz'
 
@@ -34,16 +34,16 @@ variantsFromVcf <- function(
 
    ## Set chromosome names to the same used in the supplied ref genome
    vcf$chrom <- as.character(vcf$chrom)
-   if(!is.null(ref.genome)){
+   if(!is.null(chrom.name.style)){
       if(verbose){ message('Converting chrom name style to style in ref.genome...') }
-      GenomeInfoDb::seqlevelsStyle(vcf$chrom)<- GenomeInfoDb::seqlevelsStyle(ref.genome)
+      GenomeInfoDb::seqlevelsStyle(vcf$chrom)<- chrom.name.style
    }
 
    ## Keep certain chromosome types
    if(!is.null(keep.chroms)){
       if(verbose){ message('Keeping chromosomes as indicated in keep.chroms...') }
       ## Force chromosome name style to that in ref genome
-      GenomeInfoDb::seqlevelsStyle(keep.chroms)<-  GenomeInfoDb::seqlevelsStyle(ref.genome)
+      GenomeInfoDb::seqlevelsStyle(keep.chroms)<- chrom.name.style
       vcf <- vcf[vcf$chrom %in% keep.chroms,]
    }
 
