@@ -218,7 +218,7 @@ plotContexts <- function(
       snv=function(chr){ sub('\\[.+\\]','.',chr) },
       indel=function(chr){ paste( strsplit(chr,'[.]')[[1]][c(2,4)], collapse='_' ) },
       dbs=function(chr){ sub('^\\w+>','',chr) },
-      sv=function(chr){ sub('^[[:upper:]]{3}_',chr,value=T) }
+      sv=function(chr){ sub('^[[:upper:]]{3}_',chr) }
    )
 
    context_simple_names <- sapply(names(mut_type_lookup), function(i){
