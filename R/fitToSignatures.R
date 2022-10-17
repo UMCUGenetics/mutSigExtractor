@@ -120,14 +120,15 @@ lsqnonneg.matrix <- function(mut.context.counts, signature.profiles, verbose=F){
 lsqnonneg.data.frame <- lsqnonneg.matrix
 
 ####################################################################################################
-if( 'NNLM' %in% installed.packages() ){
-   USE_LSQ_R <- FALSE
-} else {
+if( !('NNLM' %in% installed.packages()) ){
    USE_LSQ_R <- TRUE
    message(
       'NNLM package not installed. A (slow) R implementation will be used for fitting mutation contexts to signatures. ',
       '\nThe fast C++ implementation from NNLM is recommended when fitting context matrices with many samples.'
    )
+
+} else {
+   USE_LSQ_R <- FALSE
 }
 
 #' Linear least-squares (non-negative) fitting
@@ -212,20 +213,21 @@ fitToSignatures <- function(
    ## Least squares fitting --------------------------------
    if(use.lsq.r){
       sig_contrib <- lsqnonneg(mut.context.counts, signature.profiles)
-   }
 
-   if(is.vector(mut.context.counts)){
-      sig_contrib <- NNLM::nnlm(
-         signature.profiles,
-         matrix(mut.context.counts, ncol=1)
-      )$coefficients[,1]
    } else {
-      sig_contrib <- t(
-         NNLM::nnlm(
+      if(is.vector(mut.context.counts)){
+         sig_contrib <- NNLM::nnlm(
             signature.profiles,
-            t(mut.context.counts)
-         )$coefficients
-      )
+            matrix(mut.context.counts, ncol=1)
+         )$coefficients[,1]
+      } else {
+         sig_contrib <- t(
+            NNLM::nnlm(
+               signature.profiles,
+               t(mut.context.counts)
+            )$coefficients
+         )
+      }
    }
 
    if(!scale.contrib){ return(sig_contrib) }
