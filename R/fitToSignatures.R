@@ -91,11 +91,6 @@ lsqnonneg.matrix <- function(mut.context.counts, signature.profiles, verbose=F){
 
    mut.context.counts <- as.matrix(mut.context.counts)
 
-   # if( !identical(colnames(mut.context.counts), rownames(signature.profiles)) ){
-   #    warning('Contexts of mut.context.counts and signature.profiles do not match. Attempting to select revelant contexts...')
-   #    mut.context.counts <- mut.context.counts[,rownames(signature.profiles)]
-   # }
-
    if(verbose){
       message('Fitting input matrix to signature profiles...')
       counter <- 0
@@ -176,19 +171,6 @@ fitToSignatures <- function(
    mut.context.counts, signature.profiles,
    use.lsq.r=USE_LSQ_R, scale.contrib=T, verbose=F
 ){
-   if(F){
-      contexts <- readRDS('/Users/lnguyen/hpc/cuppen/projects/P0025_PCAWG_HMF/passengers/processed/mut_contexts/matrices/contexts_merged.rds')
-
-      mut.context.counts=contexts$snv[1,]
-      #mut.context.counts=as.matrix(contexts$snv)[1:10,]
-      signature.profiles=SBS_SIGNATURE_PROFILES_V3
-      use.lsq.r=F
-      scale.contrib=T
-      verbose=T
-
-      mut.context.counts=contexts[[i]]
-      signature.profiles=sig_profiles[[i]]
-   }
 
    ## Checks --------------------------------
    context_names <- if(is.vector(mut.context.counts)){
@@ -247,27 +229,11 @@ fitToSignaturesFast <- function(...){
    fitToSignatures(..., use.lsq.r=F)
 }
 
-#fitToSignaturesStrict(context_counts, SBS_SIGNATURE_PROFILES_V3, use.lsq.r=F)
-#fitToSignaturesStrict(context_counts, SBS_SIGNATURE_PROFILES_V3, use.lsq.r=T)
-
-#fitToSignaturesStrict(contexts[1:10,], SBS_SIGNATURE_PROFILES_V3, use.lsq.r=F)
-#fitToSignaturesStrict(contexts[1:10,], SBS_SIGNATURE_PROFILES_V3, use.lsq.r=T)
-
 #' @rdname fitToSignatures
 fitToSignaturesStrict <- function(
    mut.context.counts, signature.profiles, max.delta=0.004,
    detailed.output=F, use.lsq.r=USE_LSQ_R, scale.contrib=T, verbose=F
 ){
-
-   if(F){
-      contexts <- readRDS('/Users/lnguyen/hpc/cuppen/projects/P0025_PCAWG_HMF/passengers/processed/mut_contexts/matrices/contexts_merged.rds')
-
-      mut.context.counts=contexts$snv[1,]
-      #mut.context.counts=as.matrix(contexts$snv)[1:10,]
-      signature.profiles=SBS_SIGNATURE_PROFILES_V3
-      max.delta=0.004
-      verbose=T
-   }
 
    ## Checks --------------------------------
    context_names <- if(is.vector(mut.context.counts)){
@@ -290,10 +256,6 @@ fitToSignaturesStrict <- function(
    }
 
    ## Choose R or C++ implementation of lsq fitting --------------------------------
-   #mut.context.counts=context_counts
-   #mut.context.counts=contexts[1:10,]
-   #use.lsq.r=F
-
    if(is.vector(mut.context.counts)){
       mut.context.counts <- matrix(mut.context.counts, ncol=1, dimnames=list(names(mut.context.counts), NULL))
    } else {
@@ -321,8 +283,6 @@ fitToSignaturesStrict <- function(
          nnlm(signature.profiles, mut.context.counts)$coefficients
       }
    }
-
-   #f_fit(mut.context.counts, signature.profiles)
 
    ## --------------------------------
    if(verbose){ message('Performing first fit...') }
@@ -425,7 +385,6 @@ fitToSignaturesStrict <- function(
 
          ## Fit with the final set of signatures
          ## Fill in 0 for absent signatures
-         #contrib_pre <- NNLM::nnlm(my_signatures, mut_mat_sample)$coefficients[,1]
          contrib_pre <- f_fit(mut_mat_sample, my_signatures)[,1]
          contrib[names(contrib_pre)] <- contrib_pre
 

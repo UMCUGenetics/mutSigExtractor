@@ -46,26 +46,6 @@ assignSigPerMut <- function(
    verbose=F
 ){
 
-   if(F){
-      vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/160415_HMFreg0037_FR10306211_FR10306210_XXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
-      vcf.file='/Users/lnguyen/hpc/cuppen/shared_resources/HMF_data/DR-104-update3/somatics/181114_HMFregXXXXXXXX/purple/XXXXXXXX.purple.somatic.vcf.gz'
-
-      mode='snv'
-      signature.profiles=SBS_SIGNATURE_PROFILES_V3
-
-      mode='indel'
-      signature.profiles=INDEL_SIGNATURE_PROFILES
-
-      output='df'
-      fit.method='lsq'
-      args.fit=NULL
-      args.extract.sigs=list(vcf.filter='PASS')
-      min.mut.load='auto'
-      min.sig.abs.contrib='auto'
-      min.sig.rel.contrib=0.05
-      verbose=T
-   }
-
    ## Checks --------------------------------
    mode <- tolower(mode)
    if(!(mode %in% c('snv','sbs','indel','id','dbs'))){

@@ -70,14 +70,6 @@ plotContexts <- function(
    y.axis.var.scale=T, horizontal.group.labels=F, force.group.labels=F
 ){
 
-   # if(F){
-   #    x=m_clusters
-   #    group=group=summ$cluster_name
-   #    #mode='contexts'
-   #    mut.type='auto'
-   #    y.axis.var.scale=T
-   # }
-
    ## Checks --------------------------------
    require(ggplot2)
 

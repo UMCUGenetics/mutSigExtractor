@@ -10,10 +10,6 @@
 #' of each variant
 #' @export
 getContextsSv <- function(df, sv.caller='gridss', return.raw=F, verbose=F){
-   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/160925_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
-   # vcf.file='/Users/lnguyen/hpc/cog_bioinf/cuppen/project_data/HMF_data/DR010-DR047/data/171223_HMFregXXXXXXXX/XXXXXXXX.purple.sv.ann.vcf.gz'
-   # df=variantsFromVcf(vcf.file, vcf.filter='PASS', vcf.fields=c('CHROM','POS','REF','ALT','FILTER','ID','INFO'))
-   # sv.caller='gridss'
 
    if(nrow(df)==0){
       return(data.frame())

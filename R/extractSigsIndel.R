@@ -58,13 +58,6 @@ extractSigsIndelPcawg <- function(
    signature.profiles=INDEL_SIGNATURE_PROFILES, verbose=F, ...
 ){
 
-   # if(F){
-   #    vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO218019-from-jar//purple25/DO218019T.purple.somatic.vcf.gz'
-   #    vcf.file='/Users/lnguyen//hpc/cuppen/shared_resources/PCAWG/pipeline5/per-donor//DO222275-from-jar//purple25/DO222275T.purple.somatic.vcf.gz'
-   #    vcf.file='/Users/lnguyen/hpc/cuppen/projects/P0013_WGS_patterns_Diagn/CHORD/processed/scripts_main/mutSigExtractor/test/DKFZ-28GKT1.purple.somatic.vcf.gz'
-   #    ref.genome=BSgenome.Hsapiens.UCSC.hg38
-   # }
-
    ## Init --------------------------------
    if(verbose){ message('Loading variants...') }
    if(!is.null(vcf.file)){
@@ -562,5 +555,3 @@ extractSigsIndelChord <- function(
    return(out)
 }
 
-
-####################################################################################################
