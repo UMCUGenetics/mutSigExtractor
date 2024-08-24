@@ -74,6 +74,7 @@ getContextsSv <- function(df, sv.caller='gridss', return.raw=F, verbose=F){
    colnames(alt_coord) <- c('chrom_alt','pos_alt')
    df_ss <- cbind(df_ss,alt_coord); rm(alt_coord)
    df_ss$chrom <- gsub('chr','',df_ss$chrom)
+   df_ss$chrom_alt <- gsub('chr','',df_ss$chrom)
 
    df_ss$pos_alt <- as.numeric(as.character(df_ss$pos_alt))
    df_ss$sv_len <- df_ss$pos_alt - df_ss$pos
@@ -152,12 +153,6 @@ extractSigsSv <- function(
       )
       df <- getContextsSv(df, sv.caller=sv.caller, verbose=verbose)
 
-      ##
-      df <- variantsFromVcf(vcf.file, vcf.filter='PASS', vcf.fields=c('CHROM','POS','REF','ALT','FILTER','ID','INFO'))
-      df <- getContextsSv(df, sv.caller=sv.caller, verbose=verbose, return.raw=T)
-      # df[df$id=='gridss96_11128o',]
-      ##
-
    } else if(!is.null(df)){
       #colnames(df) <- c('sv_type','sv_len')
       half.tra.counts <- F ## If providing dataframe as input default to 'manta'.
@@ -191,19 +186,6 @@ extractSigsSv <- function(
       context_counts <- rep(0, nrow(sv_contexts)+1)
    } else {
       if(verbose){ message('Counting DEL, DUP, and INV context occurrences...') }
-
-      # df2 <- do.call(rbind, lapply(1:nrow(sv_contexts), function(i){
-      #    row <- sv_contexts[i,]
-      #    df_ss <- df[
-      #       df$sv_type == row$sv_type
-      #       & df$sv_len >= row$lower_cutoff
-      #       & df$sv_len < row$upper_cutoff
-      #    ,]
-      #    df_ss$context <- row[,'name']
-      #    return(df_ss)
-      # }))
-      # df2[df2$id=='gridss96_11128o',]
-      # table(df2$context)
 
       context_counts <- unlist(lapply(1:nrow(sv_contexts), function(i){
          row <- sv_contexts[i,]
