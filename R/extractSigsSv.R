@@ -74,7 +74,7 @@ getContextsSv <- function(df, sv.caller='gridss', return.raw=F, verbose=F){
    colnames(alt_coord) <- c('chrom_alt','pos_alt')
    df_ss <- cbind(df_ss,alt_coord); rm(alt_coord)
    df_ss$chrom <- gsub('chr','',df_ss$chrom)
-   df_ss$chrom_alt <- gsub('chr','',df_ss$chrom)
+   df_ss$chrom_alt <- gsub('chr','',df_ss$chrom_alt)
 
    df_ss$pos_alt <- as.numeric(as.character(df_ss$pos_alt))
    df_ss$sv_len <- df_ss$pos_alt - df_ss$pos
