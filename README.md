@@ -1,6 +1,13 @@
 mutSigExtractor
 ================
 
+> [!NOTE]
+> **This repo is no longer actively maintained. Both 
+> [CHORD](https://github.com/UMCUGenetics/CHORD) and
+> [mutSigExtractor](https://github.com/UMCUGenetics/mutSigExtractor) 
+> have been migrated to 
+> [hmftools/chord](https://github.com/hartwigmedical/hmftools/tree/master/chord).**
+
 ## Description
 
 mutSigExtractor is an R package for extracting mutation contexts from
